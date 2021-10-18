@@ -29,5 +29,12 @@ namespace OfficePlanner.Shared
         public int PersonId { get; set; }
         //navigation variable
         public Persons Persons { get; set; }
+
+
+
+
+
+
+
     }
 }
