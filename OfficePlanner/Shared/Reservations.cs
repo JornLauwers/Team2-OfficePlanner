@@ -20,7 +20,7 @@ namespace OfficePlanner.Shared
         [ForeignKey("Users")]
         public int User { get; set; }
         public Users Users { get; set; }
-        // ferign key rooms
+        // foreign key rooms
         [ForeignKey("Rooms")]
         public int Room { get; set; }
         public Rooms Rooms { get; set; }

@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.ComponentModel.DataAnnotations;
 
+
 namespace OfficePlanner.Shared
 {
     public class Roles
@@ -13,5 +14,6 @@ namespace OfficePlanner.Shared
         public int Id { get; set; }
         [Required]
         public string Name { get; set; }
+        public ICollection<Users> Users { get; set; }
     }
 }
