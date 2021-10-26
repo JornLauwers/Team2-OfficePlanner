@@ -3,17 +3,18 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 using OfficePlanner.Server.Data;
 using OfficePlanner.Shared;
 using OfficePlanner.Server.Models;
 using OfficePlanner.Shared.ViewModels;
+using Microsoft.AspNetCore.Authorization;
 
 namespace OfficePlanner.Server.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    [Authorize(Roles = "Administrator, User")]
     public class SwaggerController : Controller
     {
         private readonly ApplicationDbContext db;
