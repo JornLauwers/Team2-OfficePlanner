@@ -19,7 +19,7 @@ namespace OfficePlanner.Server.Data
         public DbSet<Rooms> Rooms { get; set; }
         public DbSet<RoomVersions> RoomVersions { get; set; }
         public DbSet<Setting> Setting { get; set; }
-        //public DbSet<Users> Users { get; set; }
+       public DbSet<PersonUser> PersonUser { get; set; }
 
         public ApplicationDbContext(
             DbContextOptions options,
