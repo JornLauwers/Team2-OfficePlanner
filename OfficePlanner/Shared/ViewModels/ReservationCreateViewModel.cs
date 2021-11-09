@@ -14,7 +14,7 @@ namespace OfficePlanner.Shared.ViewModels
         [Required]
         public DateTime EndDate { get; set; }
         [Required]
-        public int User { get; set; }
+        public string User { get; set; }
         [Required]
         public int Room { get; set; }
     }

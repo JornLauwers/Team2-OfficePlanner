@@ -8,7 +8,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace OfficePlanner.Shared
 {
-    public class Rooms
+    public class Rooms<ApplicationUser>
     {
         [Key]
         public int Id { get; set; }
@@ -16,7 +16,7 @@ namespace OfficePlanner.Shared
         public string Name { get; set; }
         [Required]
         public string Type { get; set; }
-        public ICollection<Reservations> Reservations { get; set; }
-        public ICollection<RoomVersions> RoomVersions { get; set; }
+        public ICollection<Reservations<ApplicationUser>> Reservations { get; set; }
+        public ICollection<RoomVersions<ApplicationUser>> RoomVersions { get; set; }
     }
 }

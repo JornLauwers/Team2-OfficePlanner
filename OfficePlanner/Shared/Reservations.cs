@@ -8,7 +8,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace OfficePlanner.Shared
 {
-    public class Reservations
+    public class Reservations<ApplicationUser>
     {
         [Key]
         public int Id { get; set; }
@@ -18,11 +18,11 @@ namespace OfficePlanner.Shared
         public DateTime EndDate { get; set; }
         //foreign key users
         [ForeignKey("Users")]
-        public int User { get; set; }
-        public Users Users { get; set; }
+        public string User { get; set; }
+        public virtual ApplicationUser Users { get; set; }
         // foreign key rooms
         [ForeignKey("Rooms")]
         public int Room { get; set; }
-        public Rooms Rooms { get; set; }
+        public Rooms<ApplicationUser> Rooms { get; set; }
     }
 }

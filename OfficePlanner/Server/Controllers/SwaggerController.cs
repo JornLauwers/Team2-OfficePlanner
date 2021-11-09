@@ -14,14 +14,12 @@ namespace OfficePlanner.Server.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    [Authorize(Roles = "Administrator, User")]
+  //  [Authorize(Roles = "Administrator, User")]
     public class SwaggerController : Controller
     {
-        private readonly ApplicationDbContext db;
         private readonly IReservationsRepository reservationsRepository;
-        public SwaggerController(ApplicationDbContext context, IReservationsRepository reservationsRepository)
+        public SwaggerController( IReservationsRepository reservationsRepository)
         {
-            this.db = context;
             this.reservationsRepository = reservationsRepository;
         }
         public IActionResult Index()
@@ -29,26 +27,12 @@ namespace OfficePlanner.Server.Controllers
             return View();
         }
 
-        //to test the database
-        //[HttpPost("Create")]
-        //public async Task<Roles> CreateRole()
-        //{
-        //    Roles role = new Roles { Name = "User" };
-        //    var newRole = await db.Roles.AddAsync(role);
-        //    await db.SaveChangesAsync();
-        //    return newRole.Entity;
-        //}
-        //[HttpGet("GetAll")]
-        //public async Task<IEnumerable<Roles>> GetRoles()
-        //{
-        //    return db.Roles;
-        //}
         [HttpPost("CreateReservation")]
         public IActionResult CreateReservation(ReservationCreateViewModel reservation)
         {
             if (ModelState.IsValid)
             {
-                var newReservations = new Reservations()
+                var newReservations = new Reservations<ApplicationUser>()
                 {
                     StartDate = reservation.StartDate,
                     EndDate = reservation.EndDate,
@@ -61,46 +45,46 @@ namespace OfficePlanner.Server.Controllers
             return BadRequest(ModelState);
         }
         [HttpGet("GetReservationById/{id}")]
-        public ReservationListViewModel GetReservationById(int id)
+        public ActionResult<Reservations<ApplicationUser>> GetReservationById(int id)
         {
-            var reservations = new ReservationListViewModel();
-            reservations.Reservations.Add(this.reservationsRepository.GetById(id));
-            return reservations;
+            return this.reservationsRepository.GetById(id);
         }
+
         [HttpGet("GetReservationByDate")]
-        public ReservationListViewModel GetReservationByDate(DateTime startDate, DateTime endDate)
+        public ActionResult<ReservationListView<ApplicationUser>> GetReservationByDate(DateTime startDate, DateTime endDate)
         {
-            var reservations = new ReservationListViewModel();
-            reservations.Reservations = (List<Reservations>)this.reservationsRepository.GetByDate(startDate, endDate);
-            return reservations;
+            return new ReservationListView<ApplicationUser>()
+            {
+                Reservations = this.reservationsRepository.GetByDate(startDate, endDate)
+            };
         }
         [HttpPost("UpdateReservation")]
         public IActionResult UpdateReservation(ReservationUpdateViewModel reservationUpdateViewModel)
         {
-            var r = this.reservationsRepository.GetById(reservationUpdateViewModel.Id);
-            if (r != null)
+            var resercation = this.reservationsRepository.GetById(reservationUpdateViewModel.Id);
+            if (resercation != null)
             {
                 if (ModelState.IsValid)
                 {
-                    r.StartDate = reservationUpdateViewModel.StartDate;
-                    r.EndDate = reservationUpdateViewModel.EndDate;
-                    r.Room = reservationUpdateViewModel.Room;
-                    this.reservationsRepository.Update(r);
+                    resercation.StartDate = reservationUpdateViewModel.StartDate;
+                    resercation.EndDate = reservationUpdateViewModel.EndDate;
+                    resercation.Room = reservationUpdateViewModel.Room;
+                    this.reservationsRepository.Update(resercation);
                     return Ok(ModelState);
                 }
             }
             return BadRequest(ModelState);
         }
         [HttpGet("DeleteReservation")]
-        public string DeleteReservation(int id)
+        public IActionResult DeleteReservation(int id)
         {
             var r = this.reservationsRepository.GetById(id);
             if (r != null)
             {
                 this.reservationsRepository.Delete(r);
-                return "{\"message\" : \"reservation deleted succesfuly\"}";
+                return Ok();
             }
-            return "{\"message\" : \"couldn't delete the reservation\"}";
+            return NoContent();
         }
 
     }
