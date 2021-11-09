@@ -5,8 +5,8 @@ using System.Threading.Tasks;
 
 namespace OfficePlanner.Shared.ViewModels
 {
-    public class ReservationListViewModel
+    public class ReservationListView<ApplicationUser>
     {
-        public List<Reservations> Reservations { get; set; }
+        public List<Reservations<ApplicationUser>> Reservations { get; set; } = new List<Reservations<ApplicationUser>>();
     }
 }

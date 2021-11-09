@@ -8,10 +8,10 @@ namespace OfficePlanner.Server.Models
 {
     public interface IReservationsRepository
     {
-        void Create(Reservations reservations);
-        void Delete(Reservations reservations);
-        Reservations GetById(int id);
-        IQueryable<Reservations> GetByDate(DateTime startDate, DateTime endDate);
-        void Update(Reservations reservations);
+        void Create(Reservations<ApplicationUser> reservations);
+        void Delete(Reservations<ApplicationUser> reservations);
+        Reservations<ApplicationUser> GetById(int id);
+        List<Reservations<ApplicationUser>> GetByDate(DateTime startDate, DateTime endDate);
+        void Update(Reservations<ApplicationUser> reservations);
     }
 }

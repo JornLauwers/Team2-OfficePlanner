@@ -29,7 +29,6 @@ namespace OfficePlanner.Server.Controllers
         {
             return await _context.Setting.ToListAsync();
         }
-
         // GET: api/Settings
         [HttpGet("active")]
         public ActionResult<Setting> GetActiveSettings()

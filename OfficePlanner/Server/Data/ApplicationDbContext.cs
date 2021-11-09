@@ -14,10 +14,9 @@ namespace OfficePlanner.Server.Data
     public class ApplicationDbContext : ApiAuthorizationDbContext<ApplicationUser>
     {
         public DbSet<Persons> Persons { get; set; }
-        public DbSet<Reservations> Reservations { get; set; }
-        //public DbSet<Roles> Roles { get; set; }
-        public DbSet<Rooms> Rooms { get; set; }
-        public DbSet<RoomVersions> RoomVersions { get; set; }
+        public DbSet<Reservations<ApplicationUser>> Reservations { get; set; }
+        public DbSet<Rooms<ApplicationUser>> Rooms { get; set; }
+        public DbSet<RoomVersions<ApplicationUser>> RoomVersions { get; set; }
         public DbSet<Setting> Setting { get; set; }
        public DbSet<PersonUser> PersonUser { get; set; }
 
@@ -26,7 +25,6 @@ namespace OfficePlanner.Server.Data
             IOptions<OperationalStoreOptions> operationalStoreOptions) : base(options, operationalStoreOptions)
         {
         }
-        //public DbSet<Users> Users { get; set; }
 
         public DbSet<OfficePlanner.Server.Models.ApplicationRole> ApplicationRole { get; set; }
     }

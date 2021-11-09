@@ -8,7 +8,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace OfficePlanner.Shared
 {
-    public class RoomVersions
+    public class RoomVersions<ApplicationUser>
     {
         [Key]
         public int Id { get; set; }
@@ -22,6 +22,6 @@ namespace OfficePlanner.Shared
         [ForeignKey("Rooms")]
         public int RoomId { get; set; }
         // navigation variable
-        public Rooms Rooms { get; set; }
+        public Rooms<ApplicationUser> Rooms { get; set; }
     }
 }

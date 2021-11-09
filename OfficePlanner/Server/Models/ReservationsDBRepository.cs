@@ -9,34 +9,36 @@ namespace OfficePlanner.Server.Models
 {
     public class ReservationsDBRepository : IReservationsRepository
     {
-        private ApplicationDbContext applicationDbContext { get; set; }
-        public ReservationsDBRepository(ApplicationDbContext applicationDbContext)
+        private ApplicationDbContext _context { get; set; }
+        public ReservationsDBRepository(ApplicationDbContext applicationDbContext)  
         {
-            this.applicationDbContext = applicationDbContext;
+            this._context = applicationDbContext;
         }
-        public void Create(Reservations reservations)
+        public void Create(Reservations<ApplicationUser> reservations)
         {
-            this.applicationDbContext.Reservations.Add(reservations);
-            this.applicationDbContext.SaveChanges();
+            reservations.Rooms = _context.Rooms.Find(reservations.Room);
+            reservations.Users =(ApplicationUser) _context.Users.Find(reservations.User.ToString());
+            this._context.Reservations.Add(reservations);
+            this._context.SaveChanges();
         }
-        public void Delete(Reservations reservations)
+        public void Delete(Reservations<ApplicationUser> reservations)
         {
-            this.applicationDbContext.Reservations.Remove(reservations);
-            this.applicationDbContext.SaveChanges();
+            this._context.Reservations.Remove(reservations);
+            this._context.SaveChanges();
         }
-        public Reservations GetById(int id)
+        public Reservations<ApplicationUser> GetById(int id)
         {
-            return this.applicationDbContext.Reservations.Find(id);
+            return this._context.Reservations.Find(id);
         }
-        public IQueryable<Reservations> GetByDate(DateTime startDate, DateTime endDate)
+        public List<Reservations<ApplicationUser>> GetByDate(DateTime startDate, DateTime endDate)
         {
-            //hoop dit werkt
-            return this.applicationDbContext.Reservations.Where(reservation => reservation.StartDate >= startDate && reservation.EndDate <= endDate);
+            endDate = endDate.AddDays(1);
+            return this._context.Reservations.Where(reservation => reservation.StartDate >= startDate && reservation.EndDate <= endDate).ToList<Reservations<ApplicationUser>>();
         }
-        public void Update(Reservations reservations)
+        public void Update(Reservations<ApplicationUser> reservations)
         {
-            this.applicationDbContext.Reservations.Update(reservations);
-            this.applicationDbContext.SaveChanges();
+            Microsoft.EntityFrameworkCore.ChangeTracking.EntityEntry<Shared.Reservations<ApplicationUser>> entityEntry = this._context.Reservations.Update(reservations);
+            this._context.SaveChanges();
         }
     }
 }
