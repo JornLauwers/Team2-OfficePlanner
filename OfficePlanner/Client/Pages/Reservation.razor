@@ -1,0 +1,58 @@
+﻿@page "/reservation"
+
+
+
+<h3>Make a New Reservation</h3>
+
+<EditForm Model="@newRes" OnValidSubmit="OnSubmit">
+    <div>
+        <RadzenDatePicker @bind-Value=@newRes.StartDate DateFormat="d" Change=@(args => OnChangeDate(args, "DatePicker", "dd/MM/yyyy")) />
+        <RadzenRadioButtonList @bind-Value=@value TValue="int" Orientation="Orientation.Vertical" Change=@((args) => OnChangeRadio(args, "Select Hele dag/Halve Dag"))>
+            <Items>
+                <RadzenRadioButtonListItem Text="Hele Dag" Value="1" />
+                <RadzenRadioButtonListItem Text="halve Dag" Value="2" />
+            </Items>
+        </RadzenRadioButtonList>
+        <button type="submit" class="btn btn-primary">Submit</button>
+    </div>
+    <div>
+
+    </div>
+</EditForm>
+
+
+
+@code {
+    [Inject]
+    public IReservationsService ReservationsService { get; set; }
+
+
+    protected override Task OnInitializedAsync()
+    {
+        Console.WriteLine(ReservationsService.GetReservationById(6));
+        return base.OnInitializedAsync();
+    }
+
+
+        int value = 1;
+    DateTime date = DateTime.Today.AddDays(1);
+
+    OfficePlanner.Shared.ViewModels.ReservationCreateViewModel newRes = new OfficePlanner.Shared.ViewModels.ReservationCreateViewModel()
+    {
+        User = "1",
+        Room = 1
+    };
+
+    void OnChangeDate(DateTime? value, string name, string format)
+    {
+        Console.WriteLine($"{name} value changed to {value?.ToString(format)}");
+    }
+    void OnChangeRadio(int? value, string name)
+    {
+        Console.WriteLine($"{name} value changed to {value}");
+    }
+    void OnSubmit()
+    {
+        Console.WriteLine("reservation is submitted");
+    }
+}

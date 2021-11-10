@@ -9,18 +9,21 @@ using OfficePlanner.Shared;
 using OfficePlanner.Server.Models;
 using OfficePlanner.Shared.ViewModels;
 using Microsoft.AspNetCore.Authorization;
+using AutoMapper;
 
 namespace OfficePlanner.Server.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
   //  [Authorize(Roles = "Administrator, User")]
-    public class SwaggerController : Controller
+    public class ReservationsController : Controller
     {
         private readonly IReservationsRepository reservationsRepository;
-        public SwaggerController( IReservationsRepository reservationsRepository)
+        private IMapper _mapper { get; set; }
+        public ReservationsController( IReservationsRepository reservationsRepository, IMapper mapper)
         {
             this.reservationsRepository = reservationsRepository;
+            this._mapper = mapper;
         }
         public IActionResult Index()
         {
@@ -45,15 +48,15 @@ namespace OfficePlanner.Server.Controllers
             return BadRequest(ModelState);
         }
         [HttpGet("GetReservationById/{id}")]
-        public ActionResult<Reservations<ApplicationUser>> GetReservationById(int id)
+        public ActionResult<ReservationsDTO> GetReservationById(int id)
         {
-            return this.reservationsRepository.GetById(id);
+            return _mapper.Map<ReservationsDTO>(this.reservationsRepository.GetById(id));
         }
 
         [HttpGet("GetReservationByDate")]
-        public ActionResult<ReservationListView<ApplicationUser>> GetReservationByDate(DateTime startDate, DateTime endDate)
+        public ActionResult<ReservationListView> GetReservationByDate(DateTime startDate, DateTime endDate)
         {
-            return new ReservationListView<ApplicationUser>()
+            return new ReservationListView()
             {
                 Reservations = this.reservationsRepository.GetByDate(startDate, endDate)
             };
@@ -61,15 +64,15 @@ namespace OfficePlanner.Server.Controllers
         [HttpPost("UpdateReservation")]
         public IActionResult UpdateReservation(ReservationUpdateViewModel reservationUpdateViewModel)
         {
-            var resercation = this.reservationsRepository.GetById(reservationUpdateViewModel.Id);
-            if (resercation != null)
+            var reservation = this.reservationsRepository.GetById(reservationUpdateViewModel.Id);
+            if (reservation != null)
             {
                 if (ModelState.IsValid)
                 {
-                    resercation.StartDate = reservationUpdateViewModel.StartDate;
-                    resercation.EndDate = reservationUpdateViewModel.EndDate;
-                    resercation.Room = reservationUpdateViewModel.Room;
-                    this.reservationsRepository.Update(resercation);
+                    reservation.StartDate = reservationUpdateViewModel.StartDate;
+                    reservation.EndDate = reservationUpdateViewModel.EndDate;
+                    reservation.Room = reservationUpdateViewModel.Room;
+                    this.reservationsRepository.Update(reservation);
                     return Ok(ModelState);
                 }
             }

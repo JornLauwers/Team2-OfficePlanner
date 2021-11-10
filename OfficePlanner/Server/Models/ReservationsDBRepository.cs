@@ -4,20 +4,23 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using AutoMapper;
 
 namespace OfficePlanner.Server.Models
 {
     public class ReservationsDBRepository : IReservationsRepository
     {
         private ApplicationDbContext _context { get; set; }
-        public ReservationsDBRepository(ApplicationDbContext applicationDbContext)  
+        private IMapper _mapper { get; set; }
+        public ReservationsDBRepository(ApplicationDbContext applicationDbContext, IMapper mapper)  
         {
             this._context = applicationDbContext;
+            this._mapper = mapper;
         }
         public void Create(Reservations<ApplicationUser> reservations)
         {
             reservations.Rooms = _context.Rooms.Find(reservations.Room);
-            reservations.Users =(ApplicationUser) _context.Users.Find(reservations.User.ToString());
+            reservations.Users = _context.Users.Find(reservations.User.ToString());
             this._context.Reservations.Add(reservations);
             this._context.SaveChanges();
         }
@@ -30,13 +33,21 @@ namespace OfficePlanner.Server.Models
         {
             return this._context.Reservations.Find(id);
         }
-        public List<Reservations<ApplicationUser>> GetByDate(DateTime startDate, DateTime endDate)
+        public List<ReservationsDTO> GetByDate(DateTime startDate, DateTime endDate)
         {
             endDate = endDate.AddDays(1);
-            return this._context.Reservations.Where(reservation => reservation.StartDate >= startDate && reservation.EndDate <= endDate).ToList<Reservations<ApplicationUser>>();
+            var listRes = this._context.Reservations.Where(reservation => reservation.StartDate >= startDate && reservation.EndDate <= endDate).ToList<Reservations<ApplicationUser>>();
+            var newlist = new List<ReservationsDTO>();
+            for (int i = 0; i < listRes.Count; i++)
+            {
+                newlist.Add(_mapper.Map<ReservationsDTO>(listRes[i]));
+            }
+            return newlist;
         }
         public void Update(Reservations<ApplicationUser> reservations)
         {
+            reservations.Rooms = _context.Rooms.Find(reservations.Room);
+            reservations.Users = _context.Users.Find(reservations.User.ToString());
             Microsoft.EntityFrameworkCore.ChangeTracking.EntityEntry<Shared.Reservations<ApplicationUser>> entityEntry = this._context.Reservations.Update(reservations);
             this._context.SaveChanges();
         }

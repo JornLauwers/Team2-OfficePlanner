@@ -11,7 +11,7 @@ namespace OfficePlanner.Server.Models
         void Create(Reservations<ApplicationUser> reservations);
         void Delete(Reservations<ApplicationUser> reservations);
         Reservations<ApplicationUser> GetById(int id);
-        List<Reservations<ApplicationUser>> GetByDate(DateTime startDate, DateTime endDate);
+        List<ReservationsDTO> GetByDate(DateTime startDate, DateTime endDate);
         void Update(Reservations<ApplicationUser> reservations);
     }
 }
