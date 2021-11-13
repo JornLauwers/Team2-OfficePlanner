@@ -7,11 +7,10 @@ using System.Threading.Tasks;
 
 namespace OfficePlanner.Shared.ViewModels
 {
-    public class RoomsCreateViewModel
+    public class RoomVersionsCreateViewModel
     {
+        public DateTime StartDate { get; set; }
         [Required]
-        public string Name { get; set; }
-        [Required]
-        public string Type { get; set; }
+        public int AvailableSeats { get; set; }
     }
 }

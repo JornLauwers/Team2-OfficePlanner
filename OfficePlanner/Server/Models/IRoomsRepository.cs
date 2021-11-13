@@ -9,10 +9,13 @@ namespace OfficePlanner.Server.Models
 {
     public interface IRoomsRepository
     {
-        void Create(RoomsCreateViewModel room);
-        void Delete(Rooms<ApplicationUser> rooms);
+        int CreateRoom(RoomsCreateViewModel room);
+        bool CreateRoomVersion(RoomVersionsCreateViewModel roomVersion, int room);
         Rooms<ApplicationUser> GetById(int id);
-        ICollection<RoomVersions<ApplicationUser>> GetFreeRooms();
-        void Update(Rooms<ApplicationUser> rooms);
+        RoomVersions<ApplicationUser> GetActiveRoomVersion(int roomId, DateTime ValidOnDate);
+        int GetFreeSeats(int roomId, DateTime dateTime);
+        void UpdateRoom(Rooms<ApplicationUser> rooms);
+        List<Rooms<ApplicationUser>> GetRooms();
+
     }
 }

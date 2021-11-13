@@ -25,16 +25,55 @@ namespace OfficePlanner.Server.Controllers
 
         // GET: api/Rooms
         [HttpGet]
-        public IEnumerable<string> Get()
+        public IActionResult GetAllRooms([FromQuery] DateTime dateTime)
         {
-            return new string[] { "value1", "value2" };
+            var roomsList = roomsRepository.GetRooms();
+            var roomModels = new List<RoomsReadViewModel>();
+
+            if (dateTime == DateTime.MinValue)
+            {
+                dateTime = DateTime.Now.Date;
+            }
+
+            foreach (var room in roomsList)
+            {
+                if (roomsRepository.GetActiveRoomVersion(room.Id, dateTime) != null)
+                {
+                    roomModels.Add(new RoomsReadViewModel
+                    {
+                        Name = room.Name,
+                        Type = room.Type,
+                        AvailableSeats = roomsRepository.GetActiveRoomVersion(room.Id, dateTime).AvailableSeats,
+                        FreeSeats = roomsRepository.GetFreeSeats(room.Id, dateTime),
+                        EndDate = roomsRepository.GetActiveRoomVersion(room.Id, dateTime).EndDate,
+                        StartDate = roomsRepository.GetActiveRoomVersion(room.Id, dateTime).StartDate
+                    });
+                }
+            }
+
+            return Ok(roomModels.ToArray());
         }
 
-        // GET api/<RoomsController>/5
-        [HttpGet("{id}")]
-        public string Get(int id)
+        // GET api/Rooms/5
+        [HttpGet("Active/{id}")]
+        public IActionResult GetActiveVersion(int id)
         {
-            return "value";
+            var roomVersion = roomsRepository.GetActiveRoomVersion(id, DateTime.Now);
+            var room = roomsRepository.GetById(id);
+            if (roomVersion != null && room != null)
+            {
+                var roomModel = new RoomsReadViewModel
+                {
+                    AvailableSeats = roomVersion.AvailableSeats,
+                    EndDate = roomVersion.EndDate,
+                    StartDate = roomVersion.StartDate,
+                    Name = room.Name,
+                    Type = room.Type,
+                    FreeSeats = roomsRepository.GetFreeSeats(id, DateTime.Now)
+                };
+                return Ok(roomModel);
+            }
+            return NotFound();
         }
 
         // POST api/Rooms
@@ -43,22 +82,42 @@ namespace OfficePlanner.Server.Controllers
         {
             if (ModelState.IsValid)
             {
-                this.roomsRepository.Create(room);
+                int createdId = this.roomsRepository.CreateRoom(room);
+                // Return the Id in the db of the created room, might be useful for creating version
+                return CreatedAtAction("CreateRoom", createdId);
+            }
+            return BadRequest(ModelState);
+        }
+
+        // POST api/Rooms/AddVersion/5
+        [HttpPost("AddVersion/{roomId}")]
+        public IActionResult CreateRoomVersion(RoomVersionsCreateViewModel version, [FromRoute] int roomId)
+        {
+            if (ModelState.IsValid)
+            {
+                this.roomsRepository.CreateRoomVersion(version, roomId);
                 return Ok(ModelState);
             }
             return BadRequest(ModelState);
         }
 
-        // PUT api/<RoomsController>/5
+        // PUT api/Rooms/5
         [HttpPut("{id}")]
-        public void Put(int id, [FromBody] string value)
+        public IActionResult UpdateRoom(int id, [FromBody]RoomsCreateViewModel room )
         {
-        }
+            if (ModelState.IsValid)
+            {
+                var rooms = new Rooms<ApplicationUser>
+                {
+                    Id = id,
+                    Name = room.Name,
+                    Type = room.Type
+                };
 
-        // DELETE api/<RoomsController>/5
-        [HttpDelete("{id}")]
-        public void Delete(int id)
-        {
+                this.roomsRepository.UpdateRoom(rooms);
+                return Ok(ModelState);
+            }
+            return BadRequest(ModelState);
         }
     }
 }
