@@ -33,7 +33,7 @@ namespace OfficePlanner.Server.Controllers
         [HttpGet("active")]
         public ActionResult<Setting> GetActiveSettings()
         {
-            var currentSetting = _context.Setting.FirstOrDefault(s => s.FromDate <= DateTime.Now && s.UntilDate > DateTime.Now);
+            var currentSetting = _context.Setting.FirstOrDefault(s => s.FromDate <= DateTime.Now.Date && s.UntilDate.Date >= DateTime.Now.Date);
             dynamic activeSetting = JsonConvert.DeserializeObject(currentSetting.Settings);
 
             SettingReadViewModel settingReadViewModel = new SettingReadViewModel
