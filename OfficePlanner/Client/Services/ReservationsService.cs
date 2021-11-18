@@ -18,24 +18,38 @@ namespace OfficePlanner.Client.Services
             this.httpClient = httpClient;
         }
 
-        public Task CreateReservation(ReservationCreateViewModel reservationCreateViewModel)
+        public async Task<bool> CreateReservation(ReservationCreateViewModel reservationCreateViewModel)
         {
-            throw new NotImplementedException();
+            string uri = "api/reservations/CreateReservation";
+            var response = await httpClient.PostAsJsonAsync<ReservationCreateViewModel>(uri, reservationCreateViewModel);
+            if (response.IsSuccessStatusCode)
+            {
+                return true;
+            }
+            return false;
         }
 
-        public Task DeleteReservation(int id)
+        public async Task<bool> DeleteReservation(int id)
         {
-            throw new NotImplementedException();
+            string uri = $"api/Reservations/DeleteReservation/{id}";
+            var response = await httpClient.GetAsync(uri);
+            if (response.IsSuccessStatusCode)
+            {
+                return true;
+            }
+            return false;
         }
 
-        public Task<ReservationListView> GetReservationByDate(DateTime startDate, DateTime endDate)
+        public async Task<ReservationListView> GetReservationByDate(DateTime startDate, DateTime endDate)
         {
-            throw new NotImplementedException();
+            string uri = $"api/Reservations/GetReservationByDate?startDate={startDate.ToString()}&endDate={endDate.ToString()}";
+            return await httpClient.GetFromJsonAsync<ReservationListView>(uri);
         }
 
         public async Task<ReservationsDTO> GetReservationById(int id)
         {
-            return await httpClient.GetFromJsonAsync<ReservationsDTO>($"api/Reservations/GetReservationById/{id}");
+            string uri = $"api/Reservations/GetReservationById/{id}";
+            return await httpClient.GetFromJsonAsync<ReservationsDTO>(uri);
         }
 
         public Task UpdateReservation(ReservationUpdateViewModel reservationUpdateViewModel)

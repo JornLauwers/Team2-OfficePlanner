@@ -19,11 +19,14 @@ namespace OfficePlanner.Server.Controllers
     public class ReservationsController : Controller
     {
         private readonly IReservationsRepository reservationsRepository;
+        private readonly IRoomsRepository roomsRepository;
+
         private IMapper _mapper { get; set; }
-        public ReservationsController( IReservationsRepository reservationsRepository, IMapper mapper)
+        public ReservationsController( IReservationsRepository reservationsRepository, IMapper mapper, IRoomsRepository roomsRepository)
         {
             this.reservationsRepository = reservationsRepository;
             this._mapper = mapper;
+            this.roomsRepository = roomsRepository;
         }
         public IActionResult Index()
         {
@@ -35,16 +38,12 @@ namespace OfficePlanner.Server.Controllers
         {
             if (ModelState.IsValid)
             {
-                var newReservations = _mapper.Map<Reservations<ApplicationUser>>(reservation);
-                //var newReservations = new Reservations<ApplicationUser>()
-                //{
-                //    StartDate = reservation.StartDate,
-                //    EndDate = reservation.EndDate,
-                //    Room = reservation.Room,
-                //    User = reservation.User
-                //};
-                this.reservationsRepository.Create(newReservations);
-                return Ok(ModelState);
+                if (ValidateReservation(reservation))
+                {
+                    Reservations<ApplicationUser> newReservations = _mapper.Map<Reservations<ApplicationUser>>(reservation);
+                    this.reservationsRepository.Create(newReservations);
+                    return Ok(ModelState);
+                }
             }
             return BadRequest(ModelState);
         }
@@ -71,9 +70,6 @@ namespace OfficePlanner.Server.Controllers
                 if (ModelState.IsValid)
                 {
                     reservation = _mapper.Map<Reservations<ApplicationUser>>(reservationUpdateViewModel);
-                    //reservation.StartDate = reservationUpdateViewModel.StartDate;
-                    //reservation.EndDate = reservationUpdateViewModel.EndDate;
-                    //reservation.Room = reservationUpdateViewModel.Room;
                     this.reservationsRepository.Update(reservation);
                     return Ok(ModelState);
                 }
@@ -91,6 +87,35 @@ namespace OfficePlanner.Server.Controllers
             }
             return NoContent();
         }
+        [HttpGet("IsReservationValid")]
+        public string IsReservationValid(ReservationCreateViewModel reservationCreateViewModel)
+        {
+            if(ValidateReservation(reservationCreateViewModel))
+            {
+                return "true";
+            }
+            return "false";
+        }
 
+        //niet gebruiken
+        [HttpPost("IsReservationValid")]
+        public string IsReservationValid()
+        {
+            return "true";
+        }
+
+        private bool ValidateReservation(ReservationCreateViewModel reservationCreateViewModel)
+        {
+            RoomVersions<ApplicationUser> room = roomsRepository.GetActiveRoomVersion(reservationCreateViewModel.Room, reservationCreateViewModel.StartDate);
+            List<ReservationsDTO> reservations = reservationsRepository.GetByDate(reservationCreateViewModel.StartDate, reservationCreateViewModel.EndDate);
+
+            IEnumerable<ReservationsDTO> reservationInGivenRoom = reservations.Where(x => x.Room == room.RoomId);
+
+            if (reservationInGivenRoom.Count() < room.AvailableSeats)
+            {
+                return true;
+            }
+            return false;
+        }
     }
 }

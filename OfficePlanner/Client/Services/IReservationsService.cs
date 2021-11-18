@@ -9,10 +9,10 @@ namespace OfficePlanner.Client.Services
 {
     public interface IReservationsService
     {
-        Task CreateReservation(ReservationCreateViewModel reservationCreateViewModel);
+        Task<bool> CreateReservation(ReservationCreateViewModel reservationCreateViewModel);
         Task<ReservationsDTO> GetReservationById(int id);
         Task<ReservationListView> GetReservationByDate(DateTime startDate, DateTime endDate);
         Task UpdateReservation(ReservationUpdateViewModel reservationUpdateViewModel);
-        Task DeleteReservation(int id);
+        Task<bool> DeleteReservation(int id);
     }
 }

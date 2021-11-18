@@ -9,6 +9,7 @@ using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
 using OfficePlanner.Client.Services;
+using OfficePlanner.Shared.Utils;
 
 namespace OfficePlanner.Client
 {
@@ -17,7 +18,7 @@ namespace OfficePlanner.Client
         public static async Task Main(string[] args)
         {
             var builder = WebAssemblyHostBuilder.CreateDefault(args);
-            builder.RootComponents.Add<App>("#app");
+           // builder.RootComponents.Add<App>("#app");
 
             builder.Services.AddHttpClient("OfficePlanner.ServerAPI", client => client.BaseAddress = new Uri(builder.HostEnvironment.BaseAddress))
                 .AddHttpMessageHandler<BaseAddressAuthorizationMessageHandler>();
@@ -30,6 +31,11 @@ namespace OfficePlanner.Client
             builder.Services.AddScoped(sp => sp.GetRequiredService<IHttpClientFactory>().CreateClient("OfficePlanner.ServerAPI"));
 
             builder.Services.AddApiAuthorization();
+            builder.Services.AddTransient<IValidateReservation, ValidateReservation>();
+            builder.Services.AddHttpClient<IValidateReservation, ValidateReservation>(client =>
+            {
+                client.BaseAddress = new Uri(builder.HostEnvironment.BaseAddress);
+            });
 
             await builder.Build().RunAsync();
         }
