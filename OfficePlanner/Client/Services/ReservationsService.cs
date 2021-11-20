@@ -56,5 +56,16 @@ namespace OfficePlanner.Client.Services
         {
             throw new NotImplementedException();
         }
+        public async Task<bool> Validate(ReservationCreateViewModel reservation)
+        {
+            string Uri = $"IsReservationValid";
+
+            HttpResponseMessage result = await httpClient.PostAsJsonAsync<ReservationCreateViewModel>(Uri, reservation);
+
+            string stringResult = await result.Content.ReadAsStringAsync();
+
+            return stringResult == "true";
+
+        }
     }
 }

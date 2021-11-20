@@ -14,5 +14,6 @@ namespace OfficePlanner.Client.Services
         Task<ReservationListView> GetReservationByDate(DateTime startDate, DateTime endDate);
         Task UpdateReservation(ReservationUpdateViewModel reservationUpdateViewModel);
         Task<bool> DeleteReservation(int id);
+        Task<bool> Validate(ReservationCreateViewModel reservation);
     }
 }
