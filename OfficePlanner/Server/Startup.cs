@@ -72,10 +72,14 @@ namespace OfficePlanner.Server
             app.UseBlazorFrameworkFiles();
             app.UseStaticFiles();
 
-            app.UseRouting();
+           
 
             app.UseIdentityServer();
             app.UseAuthentication();
+       
+
+            app.UseRouting();
+
             app.UseAuthorization();
 
             app.UseEndpoints(endpoints =>

@@ -25,6 +25,9 @@
 @code {
     [Inject]
     public IReservationsService ReservationsService { get; set; }
+    [Inject]
+    public IValidateReservation ValidateReservation { get; set; }
+
 
 
     protected override Task OnInitializedAsync()
@@ -34,7 +37,7 @@
     }
 
 
-        int value = 1;
+    int value = 1;
     DateTime date = DateTime.Today.AddDays(1);
 
     OfficePlanner.Shared.ViewModels.ReservationCreateViewModel newRes = new OfficePlanner.Shared.ViewModels.ReservationCreateViewModel()
@@ -51,8 +54,16 @@
     {
         Console.WriteLine($"{name} value changed to {value}");
     }
-    void OnSubmit()
+    async Task OnSubmit()
     {
-        Console.WriteLine("reservation is submitted");
+        var isValid = await ValidateReservation.Validate(newRes);
+
+        if (isValid)
+        {
+            await ReservationsService.CreateReservation(newRes);
+            Console.WriteLine("reservation is submitted");
+        }
+        Console.WriteLine("reservation is unsuccessful");
+
     }
 }
