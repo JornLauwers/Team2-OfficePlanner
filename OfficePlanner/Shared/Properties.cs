@@ -11,6 +11,8 @@ namespace OfficePlanner.Shared
         public Workhours Workhours { get; set; }
         public DateTime[] Holidays { get; set; }
         public int DaysRequiredInOffice { get; set; }
+        public int FutureReservationWindow { get; set; }
+        public bool WeekendsAllowed { get; set; }
     }
 
     public class Workhours

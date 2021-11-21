@@ -1,0 +1,77 @@
+﻿@page "/configuration"
+@using OfficePlanner.Shared
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components.WebAssembly.Authentication
+@attribute [Authorize]
+@inject HttpClient Http
+
+<h1>Configuration</h1>
+
+<h3>Settings</h3>
+
+@if (settingsRead == null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Id</th>
+                <th>Valid From</th>
+                <th>Valid Until</th>
+                <th><button class="btn-primary">Add version</button></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var setting in settingsRead)
+            {
+                <tr>
+                    <td>@setting.Id</td>
+                    <td>@setting.FromDate.ToString("dd-MM-yyy")</td>
+                    <td>@setting.UntilDate.ToString("dd-MM-yyy")</td>
+                    <td><button class="btn-secondary" @onclick="@(e => GetSettingDetails(setting.Id))">Edit</button></td>
+                </tr>
+            }
+        </tbody>
+    </table>
+    <EditForm Model="@editSetting" OnValidSubmit="OnEditSubmit" hidden="@editFormHidden">
+        <h4>Work hours</h4>
+        <RadzenLabel Text="Start hour"></RadzenLabel>
+        <RadzenDatePicker TValue="DateTime?" ShowTime="true" TimeOnly="true" DateFormat="HH:mm" Name="startHour" />
+        <RadzenLabel Text="End hour"></RadzenLabel>
+        <RadzenDatePicker TValue="DateTime?" ShowTime="true" TimeOnly="true" DateFormat="HH:mm" Name="endHour" />
+
+
+    </EditForm>
+    }
+
+@code {
+    private List<SettingReadViewModel> settingsRead;
+    private SettingReadViewModel settingDetails;
+    private SettingUpdateViewModel editSetting = new SettingUpdateViewModel();
+    private bool editFormHidden = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        settingsRead = await Http.GetFromJsonAsync<List<SettingReadViewModel>>("api/Settings/all");
+
+    }
+
+    protected async Task GetSettingDetails(int id)
+    {
+        settingDetails = await Http.GetFromJsonAsync<SettingReadViewModel>($"api/settings/{id}");
+        Console.WriteLine($"EditingView: {settingDetails.Id.ToString()}");
+        editFormHidden = false;
+    }
+
+
+
+    async Task OnEditSubmit()
+    {
+
+    }
+
+
+}

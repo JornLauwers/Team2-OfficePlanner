@@ -16,6 +16,10 @@ namespace OfficePlanner.Shared.ViewModels
         [Required]
         public int DaysRequiredInOffice { get; set; }
         [Required]
+        public int FutureReservationWindow { get; set; }
+        [Required]
+        public bool WeekendsAllowed { get; set; }
+        [Required]
         public DateTime FromDate { get; set; }
     }
 }

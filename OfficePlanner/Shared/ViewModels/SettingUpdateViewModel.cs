@@ -7,10 +7,8 @@ using System.Threading.Tasks;
 
 namespace OfficePlanner.Shared.ViewModels
 {
-    public class SettingReadViewModel
+    public class SettingUpdateViewModel
     {
-        [Required]
-        public int Id { get; set; }
         [Required]
         public Workhours Workhours { get; set; }
         [Required]
@@ -21,9 +19,5 @@ namespace OfficePlanner.Shared.ViewModels
         public int FutureReservationWindow { get; set; }
         [Required]
         public bool WeekendsAllowed { get; set; }
-        [Required]
-        public DateTime FromDate { get; set; }
-        [Required]
-        public DateTime UntilDate { get; set; }
     }
 }
