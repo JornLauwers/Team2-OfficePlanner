@@ -32,6 +32,7 @@ namespace OfficePlanner.Server
             services.AddAutoMapper(typeof(Startup));
             services.AddTransient<IReservationsRepository, ReservationsDBRepository>();
             services.AddTransient<IRoomsRepository, RoomsDBRepository>();
+            services.AddTransient<ISettingsRepository, SettingsDBRepository>();
             services.AddDbContext<ApplicationDbContext>(options =>
                 options.UseSqlServer(
                     Configuration.GetConnectionString("DefaultConnection")));

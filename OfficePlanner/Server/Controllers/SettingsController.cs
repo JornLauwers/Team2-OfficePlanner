@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
 using OfficePlanner.Server.Data;
+using OfficePlanner.Server.Models;
 using OfficePlanner.Shared;
 using OfficePlanner.Shared.ViewModels;
 
@@ -16,117 +17,100 @@ namespace OfficePlanner.Server.Controllers
     [ApiController]
     public class SettingsController : ControllerBase
     {
-        private readonly ApplicationDbContext _context;
+        private readonly ISettingsRepository settingsRepository;
 
-        public SettingsController(ApplicationDbContext context)
+
+        public SettingsController(ISettingsRepository settingsRepository)
         {
-            _context = context;
+            this.settingsRepository = settingsRepository;
         }
 
-        // GET: api/Settings
-        [HttpGet]
-        public async Task<ActionResult<IEnumerable<Setting>>> GetSetting()
+        // GET: api/Settings/all
+        [HttpGet("all")]
+        public ActionResult<List<SettingReadViewModel>> GetAllProperties()
         {
-            return await _context.Setting.ToListAsync();
+            return Ok(settingsRepository.GetAllSettings());
         }
-        // GET: api/Settings
+        // GET: api/Settings/active?date=2021-11-11
         [HttpGet("active")]
-        public ActionResult<Setting> GetActiveSettings()
+        public ActionResult<SettingReadViewModel> GetActiveProperties([FromQuery] DateTime date)
         {
-            var currentSetting = _context.Setting.FirstOrDefault(s => s.FromDate <= DateTime.Now.Date && s.UntilDate.Date >= DateTime.Now.Date);
-            dynamic activeSetting = JsonConvert.DeserializeObject(currentSetting.Settings);
-
-            SettingReadViewModel settingReadViewModel = new SettingReadViewModel
+            var settingReadViewModel = settingsRepository.GetActiveProperties(date);
+            if (settingReadViewModel != null)
             {
-                DaysRequiredInOffice = activeSetting.DaysRequiredInOffice,
-                Holidays = activeSetting.Holidays.ToObject<DateTime[]>(),
-                Workhours = activeSetting.Workhours.ToObject<Workhours>()
-            };
-            return Ok(settingReadViewModel); 
+                return Ok(settingReadViewModel);
+            }
+            else
+            {
+                return NotFound();
+            }
+            
         }
 
-        // GET: api/Settings
+        // GET: api/Settings/5
         [HttpGet("{id}")]
-        public ActionResult<Setting> GetSettingById([FromRoute] int id)
+        public ActionResult<SettingReadViewModel> GetSettingById([FromRoute] int id)
         {
-            return _context.Setting.FirstOrDefault(e => e.Id == id);
+            var setting = settingsRepository.GetById(id);
+
+            if (setting != null)
+            {
+                return Ok(setting);
+            }
+            else
+            {
+                return NotFound();
+            }
+            
         }
 
         // PUT: api/Settings
         [HttpPut("{id}")]
-        public async Task<IActionResult> PutSetting(Setting setting, [FromRoute] int id)
+        public ActionResult<Setting> PutSetting(SettingUpdateViewModel setting, [FromRoute] int id)
         {
-            if (setting.FromDate <= DateTime.Now)
+            bool success = settingsRepository.UpdateSetting(setting, id);
+
+            if (success)
             {
-                return BadRequest();
+                return Ok();
             }
             else
             {
-                _context.Entry(setting).State = EntityState.Modified;
-
-
-                try
-                {
-                    await _context.SaveChangesAsync();
-                }
-                catch (DbUpdateConcurrencyException)
-                {
-                    if (!SettingExists(setting.Id))
-                    {
-                        _context.Setting.Add(setting);
-                        await _context.SaveChangesAsync();
-                    }
-                    else
-                    {
-                        throw;
-                    }
-                }
+                return BadRequest();
             }
-            return Ok();
         }
 
 
         // POST: api/Settings
         [HttpPost]
-        public async Task<IActionResult> PostSetting(SettingCreateViewModel properties)
+        public ActionResult<SettingCreateViewModel> PostSetting(SettingCreateViewModel settings)
         {
-            Properties currentProperties = new Properties
-            {
-                DaysRequiredInOffice = properties.DaysRequiredInOffice,
-                Holidays = properties.Holidays,
-                Workhours = properties.Workhours
-            };
+            bool success = settingsRepository.CreateSetting(settings);
 
-            // Set UntilDate of currently active setting version to FromDate of new one -1d for versioning if previous version exists
-            Setting oldActiveSetting = _context.Setting.FirstOrDefault(s => s.UntilDate == DateTime.MaxValue);
-            if (oldActiveSetting != null)
+            if (success)
             {
-                oldActiveSetting.UntilDate = properties.FromDate.AddDays(-1);
-                _context.Entry(oldActiveSetting).State = EntityState.Modified;
+                return Ok();
             }
-
-            Setting setting = new Setting
+            else
             {
-                FromDate = properties.FromDate,
-                UntilDate = DateTime.MaxValue,
-                Settings = JsonConvert.SerializeObject(currentProperties)
-            };
-            await _context.Setting.AddAsync(setting);
-            try
-            {
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                throw;
-            }
-
-            return Ok();
+                return BadRequest();
+            }  
         }
 
-        private bool SettingExists(int id)
+        // DELETE: api/Settings/5
+        [HttpDelete("{id}")]
+        public ActionResult<Setting> DeleteSetting([FromRoute] int id)
         {
-            return _context.Setting.Any(e => e.Id == id);
+            bool success = settingsRepository.DeleteSetting(id);
+            if (success)
+            {
+                return Ok();
+            }
+            else
+            {
+                return BadRequest();
+            }
         }
+
     }
 }
