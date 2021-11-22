@@ -1,5 +1,5 @@
 ﻿@page "/reservation"
-
+@inject HttpClient Http
 
 
 <h3>Make a New Reservation</h3>
@@ -24,51 +24,51 @@
                 <div class="card-body">
                     <div class="card-title">Ruimte #1</div>
                     <div class="accordion">
-                    <div class="accordion-item">
-                        <h2 class="accordion-header" id="headingOne">
-                            <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne" aria-expanded="true" aria-controls="collapseOne">
-                                Bureau #1 <span class="badge badge-success float-end">Beschikbaar van 12:00 tot 16:00 </span>
-                            </button>
-                        </h2>
-                        <div id="collapseOne" class="accordion-collapse collapse show" aria-labelledby="headingOne" data-bs-parent="#accordionExample">
-                            <div class="accordion-body">
-                                <span>Kies uw start tijd: </span>
-                                <RadzenDatePicker TValue="DateTime?" ShowTime="true" TimeOnly="true" DateFormat="HH:mm" Change=@(args => OnChange(args, "Time-only DatePicker", "HH:mm")) />
-                                <button type="submit" class="btn btn-primary">Submit</button>
+                        <div class="accordion-item">
+                            <h2 class="accordion-header" id="headingOne">
+                                <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne" aria-expanded="true" aria-controls="collapseOne">
+                                    Bureau #1 <span class="badge badge-success float-end">Beschikbaar van 12:00 tot 16:00 </span>
+                                </button>
+                            </h2>
+                            <div id="collapseOne" class="accordion-collapse collapse show" aria-labelledby="headingOne" data-bs-parent="#accordionExample">
+                                <div class="accordion-body">
+                                    <span>Kies uw start tijd: </span>
+                                    <RadzenDatePicker TValue="DateTime?" ShowTime="true" TimeOnly="true" DateFormat="HH:mm" Change=@(args => OnChange(args, "Time-only DatePicker", "HH:mm")) />
+                                    <button type="submit" class="btn btn-primary">Submit</button>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                    <div class="accordion-item">
-                        <h2 class="accordion-header" id="headingTwo">
-                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTwo" aria-expanded="false" aria-controls="collapseTwo">
-                                Bureau #2 <span class="badge badge-success float-end">Beschikbaar van 12:00 tot 16:00 </span>
-                            </button>
-                        </h2>
-                        <div id="collapseTwo" class="accordion-collapse collapse" aria-labelledby="headingTwo" data-bs-parent="#accordionExample">
-                            <div class="accordion-body">
-                                <span>Kies uw start tijd: </span>
-                                <RadzenDatePicker TValue="DateTime?" ShowTime="true" TimeOnly="true" DateFormat="HH:mm" Change=@(args => OnChange(args, "Time-only DatePicker", "HH:mm")) />
-                                <button type="submit" class="btn btn-primary">Submit</button>
+                        <div class="accordion-item">
+                            <h2 class="accordion-header" id="headingTwo">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTwo" aria-expanded="false" aria-controls="collapseTwo">
+                                    Bureau #2 <span class="badge badge-success float-end">Beschikbaar van 12:00 tot 16:00 </span>
+                                </button>
+                            </h2>
+                            <div id="collapseTwo" class="accordion-collapse collapse" aria-labelledby="headingTwo" data-bs-parent="#accordionExample">
+                                <div class="accordion-body">
+                                    <span>Kies uw start tijd: </span>
+                                    <RadzenDatePicker TValue="DateTime?" ShowTime="true" TimeOnly="true" DateFormat="HH:mm" Change=@(args => OnChange(args, "Time-only DatePicker", "HH:mm")) />
+                                    <button type="submit" class="btn btn-primary">Submit</button>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                    <div class="accordion-item">
-                        <h2 class="accordion-header" id="headingThree">
-                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseThree" aria-expanded="false" aria-controls="collapseThree">
-                                Bureau #3 <span class="badge badge-success float-end">Beschikbaar van 12:00 tot 16:00 </span>
-                            </button>
-                        </h2>
-                        <div id="collapseThree" class="accordion-collapse collapse" aria-labelledby="headingThree" data-bs-parent="#accordionExample">
-                            <div class="accordion-body">
-                                <span>Kies uw start tijd: </span>
-                                <RadzenDatePicker TValue="DateTime?" ShowTime="true" TimeOnly="true" DateFormat="HH:mm" Change=@(args => OnChange(args, "Time-only DatePicker", "HH:mm")) />
-                                <button type="submit" class="btn btn-primary">Submit</button>
+                        <div class="accordion-item">
+                            <h2 class="accordion-header" id="headingThree">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseThree" aria-expanded="false" aria-controls="collapseThree">
+                                    Bureau #3 <span class="badge badge-success float-end">Beschikbaar van 12:00 tot 16:00 </span>
+                                </button>
+                            </h2>
+                            <div id="collapseThree" class="accordion-collapse collapse" aria-labelledby="headingThree" data-bs-parent="#accordionExample">
+                                <div class="accordion-body">
+                                    <span>Kies uw start tijd: </span>
+                                    <RadzenDatePicker TValue="DateTime?" ShowTime="true" TimeOnly="true" DateFormat="HH:mm" Change=@(args => OnChange(args, "Time-only DatePicker", "HH:mm")) />
+                                    <button type="submit" class="btn btn-primary">Submit</button>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
-                </div>
         </div>
     </div>
 </EditForm>
@@ -79,12 +79,17 @@
 @code {
     [Inject]
     public IReservationsService ReservationsService { get; set; }
+    DateTime today = DateTime.Today;
 
 
 
-    protected override Task OnInitializedAsync()
+    protected override async Task<Task> OnInitializedAsync()
     {
-        Console.WriteLine(ReservationsService.GetReservationById(6));
+        var res = await ReservationsService.GetReservationByDate(today, today.AddDays(1));
+        var result = await Http.GetFromJsonAsync<List<RoomsReadViewModel>>("api/Rooms");
+        Console.WriteLine();
+        Console.WriteLine(Newtonsoft.Json.JsonConvert.SerializeObject(result));
+        Console.WriteLine(Newtonsoft.Json.JsonConvert.SerializeObject(res.Reservations[0]));
         return base.OnInitializedAsync();
     }
 
