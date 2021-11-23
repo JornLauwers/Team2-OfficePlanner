@@ -38,12 +38,12 @@ namespace OfficePlanner.Server.Controllers
         {
             if (ModelState.IsValid)
             {
-                if (ValidateReservation(reservation))
-                {
+                //if (ValidateReservation(reservation))
+                //{
                     Reservations<ApplicationUser> newReservations = _mapper.Map<Reservations<ApplicationUser>>(reservation);
                     this.reservationsRepository.Create(newReservations);
                     return Ok(ModelState);
-                }
+                //}
             }
             return BadRequest(ModelState);
         }

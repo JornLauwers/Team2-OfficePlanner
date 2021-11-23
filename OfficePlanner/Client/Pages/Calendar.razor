@@ -1,0 +1,44 @@
+﻿@page "/calendar"
+<h3>Calender</h3>
+
+
+
+<RadzenScheduler LoadData="@OnLoadData" Style="height:800px" SelectedIndex="1" Data="@data" TItem="DataItem" StartProperty="Start" EndProperty="End" TextProperty="Text">
+    <RadzenDayView />
+    <RadzenWeekView />
+</RadzenScheduler>
+
+
+
+@code {
+    [Inject]
+    public IReservationsService ReservationsService { get; set; }
+    List<DataItem> data;
+    class DataItem
+    {
+        public DateTime Start { get; set; }
+        public DateTime End { get; set; }
+        public string Text { get; set; }
+    }
+
+    async Task OnLoadData(SchedulerLoadDataEventArgs args)
+    {
+        ReservationListView fetchedDada = await ReservationsService.GetReservationByDate(args.Start, args.End);
+        data = new List<DataItem>();
+        foreach (var item in fetchedDada.Reservations)
+        {
+            data.Add(
+                new DataItem
+                {
+                    Start = item.StartDate,
+                    End = item.EndDate,
+                    Text = item.Room.ToString()
+                }
+            );
+        }
+    }
+    protected override async Task<Task> OnInitializedAsync()
+    {
+        return base.OnInitializedAsync();
+    }
+}
