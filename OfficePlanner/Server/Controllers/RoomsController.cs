@@ -46,7 +46,8 @@ namespace OfficePlanner.Server.Controllers
                         AvailableSeats = roomsRepository.GetActiveRoomVersion(room.Id, dateTime).AvailableSeats,
                         FreeSeats = roomsRepository.GetFreeSeats(room.Id, dateTime),
                         EndDate = roomsRepository.GetActiveRoomVersion(room.Id, dateTime).EndDate,
-                        StartDate = roomsRepository.GetActiveRoomVersion(room.Id, dateTime).StartDate
+                        StartDate = roomsRepository.GetActiveRoomVersion(room.Id, dateTime).StartDate,
+                        Id = roomsRepository.GetActiveRoomVersion(room.Id, dateTime).Id
                     });
                 }
             }
@@ -69,7 +70,8 @@ namespace OfficePlanner.Server.Controllers
                     StartDate = roomVersion.StartDate,
                     Name = room.Name,
                     Type = room.Type,
-                    FreeSeats = roomsRepository.GetFreeSeats(id, DateTime.Now)
+                    FreeSeats = roomsRepository.GetFreeSeats(id, DateTime.Now),
+                    Id = room.Id
                 };
                 return Ok(roomModel);
             }
