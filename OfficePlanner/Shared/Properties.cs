@@ -14,10 +14,4 @@ namespace OfficePlanner.Shared
         public int FutureReservationWindow { get; set; }
         public bool WeekendsAllowed { get; set; }
     }
-
-    public class Workhours
-    {
-        public string StartHour { get; set; }
-        public string EndHour { get; set; }
-    }
 }
