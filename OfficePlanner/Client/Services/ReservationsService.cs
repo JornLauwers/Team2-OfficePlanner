@@ -60,12 +60,13 @@ namespace OfficePlanner.Client.Services
         {
             string Uri = $"IsReservationValid";
 
-            HttpResponseMessage result = await httpClient.PostAsJsonAsync<ReservationCreateViewModel>(Uri, reservation);
+            HttpResponseMessage response = await httpClient.PostAsJsonAsync<ReservationCreateViewModel>(Uri, reservation);
 
-            string stringResult = await result.Content.ReadAsStringAsync();
-
-            return stringResult == "true";
-
+            if (response.IsSuccessStatusCode)
+            {
+                return true;
+            }
+            return false;
         }
     }
 }
