@@ -14,5 +14,6 @@ namespace OfficePlanner.Shared.ViewModels
         public DateTime EndDate { get; set; }
         public int AvailableSeats { get; set; }
         public int FreeSeats { get; set; }
+        public int Id { get; set; }
     }
 }
