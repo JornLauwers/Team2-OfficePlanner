@@ -105,46 +105,47 @@
 
         foreach (var room in result)
         {
+            int deltaSeats = room.AvailableSeats - res.Reservations.Where(x => { return true /*room.Id == reservation.Room*/; }).Count();
+            Console.WriteLine(deltaSeats);
             foreach (var reservation in res.Reservations)
             {
                 if (true/*room.Id == reservation.Room*/)
                 {
                     var hoursBeforeAReservation = (reservation.StartDate.TimeOfDay - startHour.TimeOfDay).TotalHours;
                     var hoursAfterAReservation = (endHour.TimeOfDay - reservation.EndDate.TimeOfDay).TotalHours;
-                    Console.WriteLine($"from foreach loop, delta hoursBeforeAReservation is: {hoursBeforeAReservation}");
-                    Console.WriteLine($"from foreach loop, delta hoursAfterAReservation is: {hoursAfterAReservation}");
+                    Console.WriteLine($"in foreach loop, delta hoursBeforeAReservation is: {hoursBeforeAReservation}");
+                    Console.WriteLine($"in foreach loop, delta hoursAfterAReservation is: {hoursAfterAReservation}");
 
-                    if (hoursAfterAReservation >= valueX || hoursBeforeAReservation >= valueX)
-                    {
-                        if (hoursBeforeAReservation >= valueX)
-                        {
-                            times.Add(new PickerTimeRange
-                            {
-                                roomId = reservation.Room,
-                                min = startHour.TimeOfDay,
-                                max = reservation.StartDate.TimeOfDay
-                            });
-                        }
-                        if (hoursAfterAReservation >= valueX)
-                        {
-                            times.Add(new PickerTimeRange
-                            {
-                                roomId = reservation.Room,
-                                min = reservation.EndDate.TimeOfDay,
-                                max = endHour.TimeOfDay
-                            });
-                        }
-                    }
-                    else
+                    if (hoursBeforeAReservation >= valueX)
                     {
                         times.Add(new PickerTimeRange
                         {
                             roomId = reservation.Room,
                             min = startHour.TimeOfDay,
+                            max = reservation.StartDate.TimeOfDay
+                        });
+                    }
+                    if (hoursAfterAReservation >= valueX)
+                    {
+                        times.Add(new PickerTimeRange
+                        {
+                            roomId = reservation.Room,
+                            min = reservation.EndDate.TimeOfDay,
                             max = endHour.TimeOfDay
                         });
                     }
                 }
+            }
+
+            for (int i = 0; i < deltaSeats; i++)
+            {
+                Console.WriteLine($"in for loop, total free seats number: {i} of {deltaSeats}");
+                times.Add(new PickerTimeRange
+                {
+                    /* roomId = room.Id,*/
+                    min = startHour.TimeOfDay,
+                    max = endHour.TimeOfDay
+                });
             }
         }
 
