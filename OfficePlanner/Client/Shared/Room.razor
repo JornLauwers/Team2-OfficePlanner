@@ -1,0 +1,23 @@
+﻿<div class="card">
+    <div class="card-body">
+        <div class="card-title">@RoomTitle</div>
+        <div class="accordion">
+            @foreach (var item in Data)
+            {
+                if (true /*RoomId == item.roomId*/)
+                {
+                    <ReservationItem Data="item"></ReservationItem>
+                }
+            }
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public string RoomTitle { get; set; }
+    [Parameter]
+    public int RoomId { get; set; }
+    [Parameter]
+    public List<PickerTimeRange> Data { get; set; }
+}

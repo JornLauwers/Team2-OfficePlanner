@@ -20,7 +20,11 @@
 
         </div>
         <div class="col-md-7" id="accordionExample">
-            <div class="card">
+            @foreach (var room in result)
+            {
+                <Room Data="@times"></Room>
+            }
+            @*<div class="card">
                 <div class="card-body">
                     <div class="card-title">Ruimte #1</div>
                     <div class="accordion">
@@ -39,37 +43,9 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="accordion-item">
-                            <h2 class="accordion-header" id="headingTwo">
-                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTwo" aria-expanded="false" aria-controls="collapseTwo">
-                                    Bureau #2 <span class="badge badge-success float-end">Beschikbaar van 12:00 tot 16:00 </span>
-                                </button>
-                            </h2>
-                            <div id="collapseTwo" class="accordion-collapse collapse" aria-labelledby="headingTwo" data-bs-parent="#accordionExample">
-                                <div class="accordion-body">
-                                    <span>Kies uw start tijd: </span>
-                                   
-                                    <button type="submit" class="btn btn-primary">Submit</button>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="accordion-item">
-                            <h2 class="accordion-header" id="headingThree">
-                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseThree" aria-expanded="false" aria-controls="collapseThree">
-                                    Bureau #3 <span class="badge badge-success float-end">Beschikbaar van 12:00 tot 16:00 </span>
-                                </button>
-                            </h2>
-                            <div id="collapseThree" class="accordion-collapse collapse" aria-labelledby="headingThree" data-bs-parent="#accordionExample">
-                                <div class="accordion-body">
-                                    <span>Kies uw start tijd: </span>
-                                   
-                                    <button type="submit" class="btn btn-primary">Submit</button>
-                                </div>
-                            </div>
-                        </div>
                     </div>
                 </div>
-            </div>
+            </div>*@
         </div>
     </div>
 </EditForm>
@@ -84,69 +60,65 @@
     int value = 1;
     int valueX = 4;
     DateTime date = DateTime.Today.AddDays(1);
-
-
-    class PickerTimeRange
-    {
-        public int roomId;
-        public TimeSpan min;
-        public TimeSpan max;
-    }
+    List<RoomsReadViewModel>? result = new List<RoomsReadViewModel>();
+    List<PickerTimeRange>? times = new List<PickerTimeRange>();
 
     protected override async Task<Task> OnInitializedAsync()
     {
         var res = await ReservationsService.GetReservationByDate(today, today.AddDays(1));
-        var result = await Http.GetFromJsonAsync<List<RoomsReadViewModel>>("api/Rooms");
+        result = await Http.GetFromJsonAsync<List<RoomsReadViewModel>>("api/Rooms");
         // var settings = await Http.GetFromJsonAsync<SettingReadViewModel>("api/Settings/active?date=2021-11-11");
-        List<PickerTimeRange> times = new List<PickerTimeRange>();
+        times = new List<PickerTimeRange>();
 
         DateTime startHour = DateTime.Parse("2021 jan 01 07:00:00");
         DateTime endHour = DateTime.Parse("2021 jan 01 17:00:00");
 
         foreach (var room in result)
         {
+            int deltaSeats = room.AvailableSeats - res.Reservations.Where(x => { return true /*room.Id == reservation.Room*/; }).Count();
+            Console.WriteLine(deltaSeats);
             foreach (var reservation in res.Reservations)
             {
                 if (true/*room.Id == reservation.Room*/)
                 {
                     var hoursBeforeAReservation = (reservation.StartDate.TimeOfDay - startHour.TimeOfDay).TotalHours;
                     var hoursAfterAReservation = (endHour.TimeOfDay - reservation.EndDate.TimeOfDay).TotalHours;
-                    Console.WriteLine($"from foreach loop, delta hoursBeforeAReservation is: {hoursBeforeAReservation}");
-                    Console.WriteLine($"from foreach loop, delta hoursAfterAReservation is: {hoursAfterAReservation}");
+                    Console.WriteLine($"in foreach loop, delta hoursBeforeAReservation is: {hoursBeforeAReservation}");
+                    Console.WriteLine($"in foreach loop, delta hoursAfterAReservation is: {hoursAfterAReservation}");
 
-                    if (hoursAfterAReservation >= valueX || hoursBeforeAReservation >= valueX)
-                    {
-                        if (hoursBeforeAReservation >= valueX)
-                        {
-                            times.Add(new PickerTimeRange
-                            {
-                                roomId = reservation.Room,
-                                min = startHour.TimeOfDay,
-                                max = reservation.StartDate.TimeOfDay
-                            });
-                        }
-                        if (hoursAfterAReservation >= valueX)
-                        {
-                            times.Add(new PickerTimeRange
-                            {
-                                roomId = reservation.Room,
-                                min = reservation.EndDate.TimeOfDay,
-                                max = endHour.TimeOfDay
-                            });
-                        }
-                    }
-                    else
+                    if (hoursBeforeAReservation >= valueX)
                     {
                         times.Add(new PickerTimeRange
                         {
                             roomId = reservation.Room,
                             min = startHour.TimeOfDay,
+                            max = reservation.StartDate.TimeOfDay
+                        });
+                    }
+                    if (hoursAfterAReservation >= valueX)
+                    {
+                        times.Add(new PickerTimeRange
+                        {
+                            roomId = reservation.Room,
+                            min = reservation.EndDate.TimeOfDay,
                             max = endHour.TimeOfDay
                         });
                     }
                 }
             }
+
+            for (int i = 0; i < deltaSeats; i++)
+            {
+                Console.WriteLine($"in for loop, total free seats number: {i} of {deltaSeats}");
+                times.Add(new PickerTimeRange
+                {
+                    /* roomId = room.Id,*/
+                    min = startHour.TimeOfDay,
+                    max = endHour.TimeOfDay
+                });
+            }
         }
+
 
         Console.WriteLine();
         Console.WriteLine(Newtonsoft.Json.JsonConvert.SerializeObject(result));

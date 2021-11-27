@@ -1,0 +1,33 @@
+﻿<div class="accordion-item">
+    <h2 class="accordion-header" id="heading-@target">
+        <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-@target" aria-expanded="false" aria-controls="collapse-@target">
+            @Title <span class="badge badge-success float-end">Beschikbaar van @Data.min.ToString() tot @Data.max.ToString() </span>
+        </button>
+    </h2>
+    <div id="collapse-@target" class="accordion-collapse collapse" aria-labelledby="heading-@target" data-bs-parent="#accordionExample">
+        <div class="accordion-body">
+            <span>Kies uw start tijd: </span>
+            <input type="time" id="appt" name="appt"
+                   min="@Data.min.Hours.ToString()" max="@Data.max.Hours.ToString()" required>
+            <button type="submit" class="btn btn-primary">Submit</button>
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public PickerTimeRange? Data { get; set; } = new PickerTimeRange();
+    [Parameter]
+    public string? Title { get; set; } = "";
+    public string target { get; set; } = GenerateRandomAlphanumericString();
+
+    private static string GenerateRandomAlphanumericString(int length = 5)
+    {
+        const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+
+        var random = new Random();
+        var randomString = new string(Enumerable.Repeat(chars, length)
+                                                .Select(s => s[random.Next(s.Length)]).ToArray());
+        return randomString;
+    }
+}
