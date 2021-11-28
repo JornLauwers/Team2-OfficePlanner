@@ -1,7 +1,6 @@
 ﻿@page "/reservation"
 @inject HttpClient Http
 
-
 <h3>Make a New Reservation</h3>
 
 <EditForm Model="@newRes" OnValidSubmit="OnSubmit">
@@ -9,43 +8,18 @@
     <div class="row">
         <div class="col-md-4">
             <RadzenDatePicker @bind-Value=@newRes.StartDate DateFormat="d" Change=@(args => OnChangeDate(args, "DatePicker", "dd/MM/yyyy")) />
-
             <RadzenRadioButtonList @bind-Value=@value TValue="int" Orientation="Radzen.Orientation.Vertical" Change=@((args) => OnChangeRadio(args, "Select Hele dag/Halve Dag"))>
                 <Items>
                     <RadzenRadioButtonListItem Text="Hele Dag" Value="8" />
                     <RadzenRadioButtonListItem Text="halve Dag" Value="4" />
                 </Items>
             </RadzenRadioButtonList>
-
-
         </div>
         <div class="col-md-7" id="accordionExample">
             @foreach (var room in result)
             {
-                <Room Data="@times"></Room>
+                <Room Data="@times" BindingValueChanged="value => DateChanged(value)"></Room>
             }
-            @*<div class="card">
-                <div class="card-body">
-                    <div class="card-title">Ruimte #1</div>
-                    <div class="accordion">
-                        <div class="accordion-item">
-                            <h2 class="accordion-header" id="headingOne">
-                                <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne" aria-expanded="true" aria-controls="collapseOne">
-                                    Bureau #1 <span class="badge badge-success float-end">Beschikbaar van 12:00 tot 16:00 </span>
-                                </button>
-                            </h2>
-                            <div id="collapseOne" class="accordion-collapse collapse show" aria-labelledby="headingOne" data-bs-parent="#accordionExample">
-                                <div class="accordion-body">
-                                    <span>Kies uw start tijd: </span>
-                                    <input type="time" id="appt" name="appt"
-                                           min="09:00" max="18:00" required>
-                                    <button type="submit" class="btn btn-primary">Submit</button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>*@
         </div>
     </div>
 </EditForm>
@@ -62,6 +36,15 @@
     DateTime date = DateTime.Today.AddDays(1);
     List<RoomsReadViewModel>? result = new List<RoomsReadViewModel>();
     List<PickerTimeRange>? times = new List<PickerTimeRange>();
+
+    PickerTimeRange eventResult = new PickerTimeRange();
+
+    protected void DateChanged(PickerTimeRange time)
+    {
+        eventResult = time;
+        Console.WriteLine(time.min);
+        Console.WriteLine("from reservation page: " + Newtonsoft.Json.JsonConvert.SerializeObject((PickerTimeRange)eventResult));
+    }
 
     protected override async Task<Task> OnInitializedAsync()
     {
