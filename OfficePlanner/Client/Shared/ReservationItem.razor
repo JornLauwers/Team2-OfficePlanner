@@ -7,8 +7,8 @@
     <div id="collapse-@target" class="accordion-collapse collapse" aria-labelledby="heading-@target" data-bs-parent="#accordionExample">
         <div class="accordion-body">
             <span>Kies uw start tijd: </span>
-            <input type="time" id="appt" name="appt"
-                   min="@Data.min.Hours.ToString()" max="@Data.max.Hours.ToString()" required>
+            <input @onchange="DateChanged" type="time" id="appt" name="appt"
+                   min="@Data.min.ToString()" max="@Data.max.ToString()" required>
             <button type="submit" class="btn btn-primary">Submit</button>
         </div>
     </div>
@@ -19,15 +19,26 @@
     public PickerTimeRange? Data { get; set; } = new PickerTimeRange();
     [Parameter]
     public string? Title { get; set; } = "";
-    public string target { get; set; } = GenerateRandomAlphanumericString();
+    [Parameter]
+    public EventCallback<PickerTimeRange> BindingValueChanged { get; set; }
+
+    private string target { get; set; } = GenerateRandomAlphanumericString();
+
+    protected async Task DateChanged(ChangeEventArgs e)
+    {
+        var time = e.Value.ToString();
+        await BindingValueChanged.InvokeAsync(new PickerTimeRange
+        {
+            min = new TimeSpan(int.Parse(time.Split(':')[0]), int.Parse(time.Split(':')[1]), 0),
+            roomId = Data.roomId
+        });
+    }
 
     private static string GenerateRandomAlphanumericString(int length = 5)
     {
         const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-
         var random = new Random();
-        var randomString = new string(Enumerable.Repeat(chars, length)
-                                                .Select(s => s[random.Next(s.Length)]).ToArray());
+        var randomString = new string(Enumerable.Repeat(chars, length).Select(s => s[random.Next(s.Length)]).ToArray());
         return randomString;
     }
 }

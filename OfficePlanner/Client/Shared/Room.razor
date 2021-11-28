@@ -6,7 +6,7 @@
             {
                 if (true /*RoomId == item.roomId*/)
                 {
-                    <ReservationItem Data="item"></ReservationItem>
+                    <ReservationItem  BindingValueChanged="BindingValueChanged" Data="item"></ReservationItem>
                 }
             }
         </div>
@@ -20,4 +20,6 @@
     public int RoomId { get; set; }
     [Parameter]
     public List<PickerTimeRange> Data { get; set; }
+    [Parameter]
+    public EventCallback<PickerTimeRange> BindingValueChanged { get; set; }
 }
