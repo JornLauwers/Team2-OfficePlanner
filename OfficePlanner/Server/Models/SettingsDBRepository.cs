@@ -77,6 +77,10 @@ namespace OfficePlanner.Server.Models
             if (oldActiveSetting != null)
             {
                 oldActiveSetting.UntilDate = setting.FromDate.AddDays(-1);
+                if (oldActiveSetting.UntilDate > setting.FromDate)
+                {
+                    return false;
+                }
                 _context.Entry(oldActiveSetting).State = EntityState.Modified;
             }
 
@@ -142,7 +146,9 @@ namespace OfficePlanner.Server.Models
                         FromDate = settingObject.FromDate,
                         DaysRequiredInOffice = setting.DaysRequiredInOffice,
                         Holidays = setting.Holidays,
-                        Workhours = setting.Workhours
+                        Workhours = setting.Workhours,
+                        FutureReservationWindow = setting.FutureReservationWindow,
+                        WeekendsAllowed = setting.WeekendsAllowed
                     };
                     settingObject.Settings = ConvertPropertiesToJsonString(propertiesObject);
                     UpdateDBRecord(settingObject);
@@ -222,6 +228,11 @@ namespace OfficePlanner.Server.Models
                 return false;
             }
 
+            if (daysRequiredInOffice > 7)
+            {
+                return false;
+            }
+
             if (holidays.GroupBy(x => x.Date).Any(g => g.Count() > 1))
             {
                 return false;
@@ -238,6 +249,11 @@ namespace OfficePlanner.Server.Models
             }
 
             if (setting.FromDate <= DateTime.Now)
+            {
+                return false;
+            }
+
+            if (setting.FromDate <= _context.Setting.OrderByDescending(s => s.FromDate).FirstOrDefault().FromDate)
             {
                 return false;
             }
@@ -261,6 +277,11 @@ namespace OfficePlanner.Server.Models
             }
 
             if (daysRequiredInOffice < 0)
+            {
+                return false;
+            }
+
+            if (daysRequiredInOffice > 7)
             {
                 return false;
             }
