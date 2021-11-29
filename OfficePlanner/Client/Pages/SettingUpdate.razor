@@ -1,0 +1,115 @@
+﻿@page "/configuration/settings/{id}"
+@inject HttpClient Http
+
+@if (formModel == null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <h3>Setting edit </h3>
+    <div class="row col-md-4">
+        <EditForm Model=@formModel OnValidSubmit=@UpdateSetting>
+            <p><b>Setting Id: @id</b></p>
+            <RadzenLabel Text="Days required in office every week" Component="DaysRequiredInOffice" style="display:block" />
+            <RadzenNumeric TValue="int" Change="@(e => DaysReqChange(e))" @bind-Value="@formModel.DaysRequiredInOffice" Name="DaysRequiredInOffice" style="display:block" />
+            <RadzenLabel Text="How many days in the future can reservations be made?" Component="FutureReservationWindow" style="display:block" />
+            <RadzenNumeric TValue="int" Change="@(e => FutureResWindowChange(e))" @bind-Value="@formModel.FutureReservationWindow" Name="FutureReservationWindow" style="display:block" />
+            <table class="table">
+                <tr>
+                    <td>Holidays</td>
+                </tr>
+
+                @foreach (var holiday in formModel.Holidays)
+                {
+                    <tr>
+                        <td>@holiday.ToString("dd/MM/yyyy")</td>
+                        <td><a @onclick="@(e => RemoveHolidayFromList(e, holiday))" class="btn btn-primary">Delete</a></td>
+                    </tr>
+                }
+                <tr>
+                    <td><RadzenDatePicker ShowTime="false" DateFormat="dd/MM/yyyy" TValue="DateTime" @bind-Value="@newHoliday" /></td>
+                    <td><a @onclick="@(e => AddHolidayToList(e, newHoliday))" class="btn btn-primary">Add</a></td>
+                </tr>
+            </table>
+            <RadzenLabel Text="Allow reservations in the weekend?" Component="WeekendsAllowed" style="display:block" />
+            <RadzenCheckBox Change="@(e => WeekendsAllowedChange(e))" TValue="bool" Name="WeekendsAllowed" @bind-Value="formModel.WeekendsAllowed" />
+            <RadzenLabel Text="Allow reservations between:" Component="Workhours" style="display:block" />
+            <RadzenTextBox MaxLength="5" Change="@(e => StartHourChange(e))" Name="Workhours" @bind-Value="formModel.Workhours.StartHour" />
+            <RadzenTextBox MaxLength="5" Change="@(e => EndHourChange(e))" Name="Workhours" @bind-Value="formModel.Workhours.EndHour" />
+            <input type="submit" class="btn btn-primary" value="Save" />
+            <a href="/configuration" class="btn btn-secondary">Cancel</a>
+        </EditForm>
+    </div>
+}
+
+
+@code {
+    [Inject]
+    public ISettingsService SettingsService { get; set; }
+    [Inject]
+    NavigationManager NavigationManager { get; set; }
+    [Parameter]
+    public string id { get; set; }
+    private SettingReadViewModel activeSetting;
+    private SettingUpdateViewModel formModel;
+    private DateTime newHoliday;
+
+    protected override async Task OnInitializedAsync()
+    {
+        activeSetting = await SettingsService.GetSettingById(Int32.Parse(id));
+        formModel = new SettingUpdateViewModel()
+        {
+            DaysRequiredInOffice = activeSetting.DaysRequiredInOffice,
+            FutureReservationWindow = activeSetting.FutureReservationWindow,
+            Holidays = activeSetting.Holidays,
+            WeekendsAllowed = activeSetting.WeekendsAllowed,
+            Workhours = activeSetting.Workhours
+        };
+    }
+
+    void UpdateSetting(EditContext context)
+    {
+        SettingsService.UpdateSetting(formModel, Int32.Parse(id));
+        NavigationManager.NavigateTo("/configuration");
+    }
+
+    void DaysReqChange(int days)
+    {
+        formModel.DaysRequiredInOffice = days;
+    }
+
+    void FutureResWindowChange(int days)
+    {
+        formModel.FutureReservationWindow = days;
+    }
+
+    void RemoveHolidayFromList(MouseEventArgs mouseEventArgs, DateTime holiday)
+    {
+        formModel.Holidays = formModel.Holidays.Where(h => h != holiday).ToArray();
+        StateHasChanged();
+    }
+
+    void AddHolidayToList(MouseEventArgs mouseEventArgs, DateTime holiday)
+    {
+        formModel.Holidays = formModel.Holidays.Append(holiday).ToArray();
+        StateHasChanged();
+    }
+
+    void WeekendsAllowedChange(bool toggle)
+    {
+        formModel.WeekendsAllowed = toggle;
+    }
+
+    void StartHourChange(string time)
+    {
+        formModel.Workhours.StartHour = time;
+    }
+
+    void EndHourChange(string time)
+    {
+        formModel.Workhours.EndHour = time;
+    }
+
+
+}

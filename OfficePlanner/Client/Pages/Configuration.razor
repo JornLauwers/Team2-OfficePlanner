@@ -1,15 +1,8 @@
 ﻿@page "/configuration"
-@using OfficePlanner.Shared
-@using Microsoft.AspNetCore.Authorization
-@using Microsoft.AspNetCore.Components.WebAssembly.Authentication
-@attribute [Authorize]
 @inject HttpClient Http
+<h3>Configuration</h3>
 
-<h1>Configuration</h1>
-
-<h3>Settings</h3>
-
-@if (settingsRead == null)
+@if (allSettings == null)
 {
     <p><em>Loading...</em></p>
 }
@@ -21,57 +14,88 @@ else
                 <th>Id</th>
                 <th>Valid From</th>
                 <th>Valid Until</th>
-                <th><button class="btn-primary">Add version</button></th>
+                <th><a href="/configuration/AddSetting">Add</a></th>
             </tr>
         </thead>
         <tbody>
-            @foreach (var setting in settingsRead)
+            @foreach (var setting in allSettings)
             {
                 <tr>
                     <td>@setting.Id</td>
                     <td>@setting.FromDate.ToString("dd-MM-yyy")</td>
                     <td>@setting.UntilDate.ToString("dd-MM-yyy")</td>
-                    <td><button class="btn-secondary" @onclick="@(e => GetSettingDetails(setting.Id))">Edit</button></td>
+                    <td>
+                        @if (setting.FromDate > DateTime.Now.Date)
+                        {
+                            <a href="/configuration/settings/@setting.Id">Edit</a>
+                        }
+                        else
+                        {
+                            <a @onclick="@(e => UpdateActiveSettingDisplay(e, setting.FromDate))">View</a>
+                        }
+                    </td>
                 </tr>
             }
         </tbody>
     </table>
-    <EditForm Model="@editSetting" OnValidSubmit="OnEditSubmit" hidden="@editFormHidden">
-        <h4>Work hours</h4>
-        <RadzenLabel Text="Start hour"></RadzenLabel>
-        <RadzenDatePicker TValue="DateTime?" ShowTime="true" TimeOnly="true" DateFormat="HH:mm" Name="startHour" />
-        <RadzenLabel Text="End hour"></RadzenLabel>
-        <RadzenDatePicker TValue="DateTime?" ShowTime="true" TimeOnly="true" DateFormat="HH:mm" Name="endHour" />
 
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Current active setting</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>Id</td>
+                <td>@activeSetting.Id</td>
+            </tr>
+            <tr>
+                <td>Reservation times</td>
+                <td>Between @activeSetting.Workhours.StartHour &amp; @activeSetting.Workhours.EndHour</td>
+            </tr>
+            <tr>
+                <td>Holidays</td>
+                <td>
+                    @foreach (var holiday in activeSetting.Holidays)
+                    {
+                        @holiday.Date.ToString("dd-MM-yyyy");
+                        <br />
+                    }
+                </td>
+            </tr>
+            <tr>
+                <td>Target reservatrions</td>
+                <td>@activeSetting.DaysRequiredInOffice days</td>
+            </tr>
+            <tr>
+                <td>Reservation window</td>
+                <td>@activeSetting.FutureReservationWindow days</td>
+            </tr>
+            <tr>
+                <td>Weekend reservations</td>
+                <td>@activeSetting.WeekendsAllowed</td>
+            </tr>
+        </tbody>
 
-    </EditForm>
-    }
+    </table>
+}
 
 @code {
-    private List<SettingReadViewModel> settingsRead;
-    private SettingReadViewModel settingDetails;
-    private SettingUpdateViewModel editSetting = new SettingUpdateViewModel();
-    private bool editFormHidden = true;
+    [Inject]
+    public ISettingsService SettingsService { get; set; }
+    public List<SettingReadViewModel> allSettings;
+    private SettingReadViewModel activeSetting;
 
     protected override async Task OnInitializedAsync()
     {
-        settingsRead = await Http.GetFromJsonAsync<List<SettingReadViewModel>>("api/Settings/all");
-
+        allSettings = await SettingsService.GetAllSettings();
+        activeSetting = await SettingsService.GetActiveSetting(DateTime.Now);
     }
 
-    protected async Task GetSettingDetails(int id)
+    async Task UpdateActiveSettingDisplay(MouseEventArgs mouseEventArgs, DateTime versionDate)
     {
-        settingDetails = await Http.GetFromJsonAsync<SettingReadViewModel>($"api/settings/{id}");
-        Console.WriteLine($"EditingView: {settingDetails.Id.ToString()}");
-        editFormHidden = false;
+        activeSetting = await SettingsService.GetActiveSetting(versionDate);
     }
-
-
-
-    async Task OnEditSubmit()
-    {
-
-    }
-
-
 }
