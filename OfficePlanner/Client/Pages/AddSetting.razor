@@ -1,4 +1,4 @@
-﻿@page "/configuration/settings/{id}"
+﻿@page "/configuration/AddSetting"
 @inject HttpClient Http
 
 @if (formModel == null)
@@ -7,10 +7,11 @@
 }
 else
 {
-    <h3>Setting edit </h3>
+    <h3>New Settings</h3>
     <div class="row col-md-4">
-        <EditForm Model=@formModel OnValidSubmit=@UpdateSetting>
-            <p><b>Setting Id: @id</b></p>
+        <EditForm Model=@formModel OnValidSubmit=@CreateSetting>
+            <RadzenLabel Text="Version start date" Component="StartDate" style="display:block" />
+            <RadzenDatePicker ShowTime="false" DateFormat="dd/MM/yyyy" TValue="DateTime" @bind-Value="@formModel.FromDate" Name="StartDate" />
             <RadzenLabel Text="Days required in office every week" Component="DaysRequiredInOffice" style="display:block" />
             <RadzenNumeric TValue="int" Change="@(e => DaysReqChange(e))" @bind-Value="@formModel.DaysRequiredInOffice" Name="DaysRequiredInOffice" style="display:block" />
             <RadzenLabel Text="How many days in the future can reservations be made?" Component="FutureReservationWindow" style="display:block" />
@@ -51,28 +52,33 @@ else
     public ISettingsService SettingsService { get; set; }
     [Inject]
     NavigationManager NavigationManager { get; set; }
-    [Parameter]
-    public string id { get; set; }
-    private SettingReadViewModel activeSetting;
-    private SettingUpdateViewModel formModel;
+    private SettingCreateViewModel formModel;
     private DateTime newHoliday;
 
     protected override async Task OnInitializedAsync()
     {
-        activeSetting = await SettingsService.GetSettingById(Int32.Parse(id));
-        formModel = new SettingUpdateViewModel()
+        var res = await SettingsService.GetAllSettings();
+        var earliestVersionDate = res.OrderByDescending(s => s.FromDate).FirstOrDefault().FromDate.AddDays(1);
+        var latestVersion = res.OrderByDescending(s => s.Id).FirstOrDefault();
+
+        if (earliestVersionDate.Date == DateTime.Now.Date)
         {
-            DaysRequiredInOffice = activeSetting.DaysRequiredInOffice,
-            FutureReservationWindow = activeSetting.FutureReservationWindow,
-            Holidays = activeSetting.Holidays,
-            WeekendsAllowed = activeSetting.WeekendsAllowed,
-            Workhours = activeSetting.Workhours
+            earliestVersionDate = earliestVersionDate.AddDays(1);
+        }
+        formModel = new SettingCreateViewModel()
+        {
+            FromDate = earliestVersionDate,
+            DaysRequiredInOffice = latestVersion.DaysRequiredInOffice,
+            FutureReservationWindow = latestVersion.FutureReservationWindow,
+            Holidays = latestVersion.Holidays,
+            WeekendsAllowed = latestVersion.WeekendsAllowed,
+            Workhours = latestVersion.Workhours
         };
     }
 
-    void UpdateSetting(EditContext context)
+    async Task CreateSetting(EditContext context)
     {
-        SettingsService.UpdateSetting(formModel, Int32.Parse(id));
+        var res = await SettingsService.CreateSetting(formModel);
         NavigationManager.NavigateTo("/configuration");
     }
 
@@ -112,6 +118,4 @@ else
     {
         formModel.Workhours.EndHour = time;
     }
-
-
 }

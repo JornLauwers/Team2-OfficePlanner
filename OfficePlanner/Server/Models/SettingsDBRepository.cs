@@ -181,6 +181,9 @@ namespace OfficePlanner.Server.Models
             }
 
             var settingObject = _context.Setting.FirstOrDefault(e => e.Id == id);
+
+
+
             if (settingObject.FromDate <= DateTime.Now)
             {
                 return false;
@@ -188,6 +191,9 @@ namespace OfficePlanner.Server.Models
             else
             {
                 DeleteDBRecord(settingObject);
+                var newMaxDateSetting = _context.Setting.OrderByDescending(s => s.FromDate).FirstOrDefault();
+                newMaxDateSetting.UntilDate = DateTime.MaxValue;
+                UpdateDBRecord(newMaxDateSetting);
                 return true;
             }
 
