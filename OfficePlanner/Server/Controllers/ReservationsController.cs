@@ -105,7 +105,7 @@ namespace OfficePlanner.Server.Controllers
 
         private bool ValidateReservation(ReservationCreateViewModel reservationCreateViewModel)
         {
-            RoomVersions<ApplicationUser> room = roomsRepository.GetActiveRoomVersion(reservationCreateViewModel.Room, reservationCreateViewModel.StartDate);
+            RoomVersions<ApplicationUser> room = roomsRepository.GetRoomVersion(reservationCreateViewModel.Room, reservationCreateViewModel.StartDate);
             List<ReservationsDTO> reservations = reservationsRepository.GetByDate(reservationCreateViewModel.StartDate, reservationCreateViewModel.EndDate);
 
             IEnumerable<ReservationsDTO> reservationInGivenRoom = reservations.Where(x => x.Room == room.RoomId);
