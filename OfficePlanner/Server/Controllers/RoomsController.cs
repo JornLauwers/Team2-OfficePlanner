@@ -25,9 +25,9 @@ namespace OfficePlanner.Server.Controllers
 
         // GET: api/Rooms
         [HttpGet]
-        public IActionResult GetAllRooms([FromQuery] DateTime dateTime)
+        public IActionResult GetAllRooms([FromQuery] DateTime date)
         {
-            var roomsList = roomsRepository.GetAllActiveRooms(dateTime);
+            var roomsList = roomsRepository.GetAllActiveRooms(date);
 
             return Ok(roomsList.ToArray());
         }
