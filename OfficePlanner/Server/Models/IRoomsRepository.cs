@@ -12,10 +12,11 @@ namespace OfficePlanner.Server.Models
         int CreateRoom(RoomsCreateViewModel room);
         bool CreateRoomVersion(RoomVersionsCreateViewModel roomVersion, int room);
         Rooms<ApplicationUser> GetById(int id);
-        RoomVersions<ApplicationUser> GetActiveRoomVersion(int roomId, DateTime ValidOnDate);
+        RoomVersions<ApplicationUser> GetRoomVersion(int roomId, DateTime ValidOnDate);
+        List<RoomVersions<ApplicationUser>> GetAllRoomVersions(int roomId);
         int GetFreeSeats(int roomId, DateTime dateTime);
-        void UpdateRoom(Rooms<ApplicationUser> rooms);
-        List<Rooms<ApplicationUser>> GetRooms();
+        void UpdateRoom(RoomsCreateViewModel room, int id);
+        List<RoomsReadViewModel> GetAllActiveRooms(DateTime date);
 
     }
 }

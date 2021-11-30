@@ -18,6 +18,11 @@ namespace OfficePlanner.Server.Models
         {
             this._context = applicationDbContext;
         }
+        private void UpdateDBRecord(Rooms<ApplicationUser> room)
+        {
+            _context.Entry(room).State = EntityState.Modified;
+            _context.SaveChanges();
+        }
 
         public int CreateRoom(RoomsCreateViewModel rooms)
         {
@@ -49,7 +54,7 @@ namespace OfficePlanner.Server.Models
             }
             else
             {
-                var oldVersion = GetActiveRoomVersion(rooms.Id, roomVersion.StartDate);
+                var oldVersion = GetRoomVersion(rooms.Id, roomVersion.StartDate);
 
                 if (oldVersion != null)
                 {
@@ -71,23 +76,60 @@ namespace OfficePlanner.Server.Models
             return true;
         }
 
+        public List<RoomsReadViewModel> GetAllActiveRooms(DateTime date)
+        {
+            if (date == DateTime.MinValue)
+            {
+                date = DateTime.Now.Date;
+            }
+            var rooms = _context.Rooms.ToList();
+
+            List<RoomsReadViewModel> readViewModels = new List<RoomsReadViewModel>();
+
+            foreach (var room in rooms)
+            {
+                var activeRoomVersion = GetRoomVersion(room.Id, date);
+
+                readViewModels.Add(new RoomsReadViewModel
+                {
+                    Id = room.Id,
+                    AvailableSeats = activeRoomVersion.AvailableSeats,
+                    EndDate = activeRoomVersion.EndDate,
+                    FreeSeats = GetFreeSeats(room.Id, date),
+                    Name = room.Name,
+                    StartDate = activeRoomVersion.StartDate,
+                    Type = room.Type
+                });
+            }
+
+            return readViewModels;
+        }
+
         public Rooms<ApplicationUser> GetById(int id)
         {
             var room = _context.Rooms.Find(id);
+            room.RoomVersions = GetAllRoomVersions(id);
             return room;
+        }
+        public List<RoomVersions<ApplicationUser>> GetAllRoomVersions(int roomId)
+        {
+            return _context.RoomVersions.Where(r => r.RoomId == roomId).ToList(); 
         }
 
 
 
-        public void UpdateRoom(Rooms<ApplicationUser> rooms)
+        public void UpdateRoom(RoomsCreateViewModel rooms, int id)
         {
-            _context.Entry(rooms).State = EntityState.Modified;
-            _context.SaveChanges();
+
+            var room = _context.Rooms.FirstOrDefault(r => r.Id == id);
+            room.Name = rooms.Name;
+            room.Type = rooms.Type;
+            UpdateDBRecord(room);
         }
 
         public int GetFreeSeats(int roomId, DateTime dateTime)
         {
-            var roomVersion = GetActiveRoomVersion(roomId, dateTime);
+            var roomVersion = GetRoomVersion(roomId, dateTime);
             var reservations = _context.Reservations.Where(r => r.Room == roomId && r.EndDate > dateTime && r.StartDate < dateTime);
             var amountOfReservations = reservations.Count();
 
@@ -96,16 +138,11 @@ namespace OfficePlanner.Server.Models
             return freeSeats;
         }
 
-        public RoomVersions<ApplicationUser> GetActiveRoomVersion(int roomId, DateTime validOnDate)
+        public RoomVersions<ApplicationUser> GetRoomVersion(int roomId, DateTime validOnDate)
         {
             var roomVersion = _context.RoomVersions.FirstOrDefault(r => r.RoomId == roomId && r.EndDate.Date >= validOnDate.Date && r.StartDate.Date <= validOnDate.Date);
 
             return roomVersion;
-        }
-
-        public List<Rooms<ApplicationUser>> GetRooms()
-        {
-            return _context.Rooms.ToList();
         }
     }
 }

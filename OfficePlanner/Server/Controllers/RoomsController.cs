@@ -27,39 +27,16 @@ namespace OfficePlanner.Server.Controllers
         [HttpGet]
         public IActionResult GetAllRooms([FromQuery] DateTime dateTime)
         {
-            var roomsList = roomsRepository.GetRooms();
-            var roomModels = new List<RoomsReadViewModel>();
+            var roomsList = roomsRepository.GetAllActiveRooms(dateTime);
 
-            if (dateTime == DateTime.MinValue)
-            {
-                dateTime = DateTime.Now.Date;
-            }
-
-            foreach (var room in roomsList)
-            {
-                if (roomsRepository.GetActiveRoomVersion(room.Id, dateTime) != null)
-                {
-                    roomModels.Add(new RoomsReadViewModel
-                    {
-                        Name = room.Name,
-                        Type = room.Type,
-                        AvailableSeats = roomsRepository.GetActiveRoomVersion(room.Id, dateTime).AvailableSeats,
-                        FreeSeats = roomsRepository.GetFreeSeats(room.Id, dateTime),
-                        EndDate = roomsRepository.GetActiveRoomVersion(room.Id, dateTime).EndDate,
-                        StartDate = roomsRepository.GetActiveRoomVersion(room.Id, dateTime).StartDate,
-                        Id = roomsRepository.GetActiveRoomVersion(room.Id, dateTime).Id
-                    });
-                }
-            }
-
-            return Ok(roomModels.ToArray());
+            return Ok(roomsList.ToArray());
         }
 
         // GET api/Rooms/5
         [HttpGet("Active/{id}")]
         public IActionResult GetActiveVersion(int id)
         {
-            var roomVersion = roomsRepository.GetActiveRoomVersion(id, DateTime.Now);
+            var roomVersion = roomsRepository.GetRoomVersion(id, DateTime.Now);
             var room = roomsRepository.GetById(id);
             if (roomVersion != null && room != null)
             {
@@ -105,18 +82,11 @@ namespace OfficePlanner.Server.Controllers
 
         // PUT api/Rooms/5
         [HttpPut("{id}")]
-        public IActionResult UpdateRoom(int id, [FromBody]RoomsCreateViewModel room )
+        public IActionResult UpdateRoom(int id, [FromBody]RoomsCreateViewModel room)
         {
             if (ModelState.IsValid)
             {
-                var rooms = new Rooms<ApplicationUser>
-                {
-                    Id = id,
-                    Name = room.Name,
-                    Type = room.Type
-                };
-
-                this.roomsRepository.UpdateRoom(rooms);
+                this.roomsRepository.UpdateRoom(room, id);
                 return Ok(ModelState);
             }
             return BadRequest(ModelState);

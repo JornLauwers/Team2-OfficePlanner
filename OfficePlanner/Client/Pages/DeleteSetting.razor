@@ -1,48 +1,16 @@
-﻿@page "/configuration"
+﻿@page "/configuration/settings/delete/{id}"
 @inject HttpClient Http
-<h3>Configuration</h3>
 
-@if (allSettings == null)
+
+@if (activeSetting == null)
 {
     <p><em>Loading...</em></p>
 }
 else
 {
-    <table class="table">
-        <thead>
-            <tr>
-                <th>Id</th>
-                <th>Valid From</th>
-                <th>Valid Until</th>
-                <th><a href="/configuration/AddSetting" class="btn btn-primary">Add</a></th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var setting in allSettings)
-            {
-                <tr @onclick="@(e => UpdateActiveSettingDisplay(e, setting.FromDate))" class="@(activeSetting.Id == setting.Id?"table-active":"")">
-                    <td>@setting.Id</td>
-                    <td>@setting.FromDate.ToString("dd-MM-yyyy")</td>
-                    <td>@(setting.UntilDate == DateTime.MaxValue?"":setting.UntilDate.ToString("dd-MM-yyyy"))</td>
-                    <td>
-                        @if (setting.FromDate > DateTime.Now.Date)
-                        {
-                            <a href="/configuration/settings/@setting.Id" class="btn btn-primary">Edit</a>
-                            <a href="/configuration/settings/delete/@setting.Id" class="btn btn-primary">Delete</a>
-                        }
-                    </td>
-                </tr>
-            }
-        </tbody>
-    </table>
+    <h3>Confirm setting delete</h3>
 
     <table class="table">
-        <thead>
-            <tr>
-                <th>Selected setting</th>
-                <th></th>
-            </tr>
-        </thead>
         <tbody>
             <tr>
                 <td>Id</td>
@@ -75,20 +43,27 @@ else
                 <td>@activeSetting.WeekendsAllowed</td>
             </tr>
         </tbody>
-
     </table>
+    <div style="display:block">
+        <input type="submit" class="btn btn-primary" value="Delete" @onclick="@(e => RemoveSetting(e, activeSetting.Id))" />
+        <a href="/configuration" class="btn btn-secondary">Cancel</a>
+    </div>
+
+
 }
 
 @code {
     [Inject]
     public ISettingsService SettingsService { get; set; }
-    public List<SettingReadViewModel> allSettings;
+    [Inject]
+    NavigationManager NavigationManager { get; set; }
     private SettingReadViewModel activeSetting;
+    [Parameter]
+    public string id { get; set; }
 
     protected override async Task OnInitializedAsync()
     {
-        allSettings = await SettingsService.GetAllSettings();
-        activeSetting = await SettingsService.GetActiveSetting(DateTime.Now);
+        activeSetting = await SettingsService.GetSettingById(Int32.Parse(id));
     }
 
     async Task UpdateActiveSettingDisplay(MouseEventArgs mouseEventArgs, DateTime versionDate)
@@ -99,7 +74,7 @@ else
     async Task RemoveSetting(MouseEventArgs mouseEventArgs, int id)
     {
         var res = await SettingsService.DeleteSetting(id);
-
+        NavigationManager.NavigateTo("/configuration");
     }
 
 }
