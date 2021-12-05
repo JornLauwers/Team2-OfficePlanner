@@ -58,7 +58,7 @@ namespace OfficePlanner.Client.Services
         }
         public async Task<bool> Validate(ReservationCreateViewModel reservation)
         {
-            string Uri = $"IsReservationValid";
+            string Uri = $"api/Reservations/IsReservationValid";
 
             HttpResponseMessage response = await httpClient.PostAsJsonAsync<ReservationCreateViewModel>(Uri, reservation);
 

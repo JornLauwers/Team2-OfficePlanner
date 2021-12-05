@@ -86,21 +86,15 @@ namespace OfficePlanner.Server.Controllers
             }
             return NoContent();
         }
-        [HttpGet("IsReservationValid")]
-        public IActionResult IsReservationValid(ReservationCreateViewModel reservationCreateViewModel)
+        [HttpPost("IsReservationValid")]
+        public IActionResult IsReservationValid([FromBody]ReservationCreateViewModel reservationCreateViewModel)
         {
-            if(ValidateReservation(reservationCreateViewModel))
+            bool valid = ValidateReservation(reservationCreateViewModel);
+            if (valid)
             {
                 return Ok();
             }
             return BadRequest();
-        }
-
-        //niet gebruiken
-        [HttpPost("IsReservationValid")]
-        public string IsReservationValid()
-        {
-            return "true";
         }
 
         private bool ValidateReservation(ReservationCreateViewModel reservationCreateViewModel)
