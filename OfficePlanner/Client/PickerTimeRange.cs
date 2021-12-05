@@ -10,5 +10,6 @@ namespace OfficePlanner.Client
         public int roomId;
         public TimeSpan min;
         public TimeSpan max;
+        public TimeSpan pick;
     }
 }

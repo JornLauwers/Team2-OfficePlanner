@@ -1,15 +1,15 @@
 ﻿<div class="accordion-item">
     <h2 class="accordion-header" id="heading-@target">
         <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-@target" aria-expanded="false" aria-controls="collapse-@target">
-            @Title <span class="badge badge-success float-end">Beschikbaar van @Data.min.ToString() tot @Data.max.ToString() </span>
+            @Title <span class="badge badge-success float-end">Available from @Data.min.ToString() till @Data.max.ToString() </span>
         </button>
     </h2>
     <div id="collapse-@target" class="accordion-collapse collapse" aria-labelledby="heading-@target" data-bs-parent="#accordionExample">
         <div class="accordion-body">
-            <span>Kies uw start tijd: </span>
+            <span>Pick your starting time: </span>
             <input @onchange="DateChanged" type="time" id="appt" name="appt"
                    min="@Data.min.ToString()" max="@Data.max.ToString()" required>
-            <button type="submit" class="btn btn-primary">Submit</button>
+            <button type="submit" class="btn btn-primary" @onclick="x=>SubmitBtnClick.InvokeAsync()">Submit</button>
         </div>
     </div>
 </div>
@@ -21,6 +21,8 @@
     public string? Title { get; set; } = "";
     [Parameter]
     public EventCallback<PickerTimeRange> BindingValueChanged { get; set; }
+    [Parameter]
+    public EventCallback<PickerTimeRange> SubmitBtnClick { get; set; }
 
     private string target { get; set; } = GenerateRandomAlphanumericString();
 
@@ -29,9 +31,14 @@
         var time = e.Value.ToString();
         await BindingValueChanged.InvokeAsync(new PickerTimeRange
         {
-            min = new TimeSpan(int.Parse(time.Split(':')[0]), int.Parse(time.Split(':')[1]), 0),
+            min = Data.min,
+            max = Data.max,
+            pick = new TimeSpan(int.Parse(time.Split(':')[0]), int.Parse(time.Split(':')[1]), 0),
             roomId = Data.roomId
         });
+
+        Console.WriteLine("byah byah");
+
     }
 
     private static string GenerateRandomAlphanumericString(int length = 5)

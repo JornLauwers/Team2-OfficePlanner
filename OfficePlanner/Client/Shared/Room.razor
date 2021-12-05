@@ -4,9 +4,9 @@
         <div class="accordion">
             @foreach (var item in Data)
             {
-                if (true /*RoomId == item.roomId*/)
+                if (RoomId == item.roomId)
                 {
-                    <ReservationItem  BindingValueChanged="BindingValueChanged" Data="item"></ReservationItem>
+                    <ReservationItem BindingValueChanged="BindingValueChanged" SubmitBtnClick="SubmitBtnClick" Data="item"></ReservationItem>
                 }
             }
         </div>
@@ -22,4 +22,6 @@
     public List<PickerTimeRange> Data { get; set; }
     [Parameter]
     public EventCallback<PickerTimeRange> BindingValueChanged { get; set; }
+    [Parameter]
+    public EventCallback<PickerTimeRange> SubmitBtnClick { get; set; }
 }

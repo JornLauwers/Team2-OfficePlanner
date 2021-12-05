@@ -1,24 +1,26 @@
 ﻿@page "/reservation"
 @inject HttpClient Http
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@using System.Security.Claims
 
 <h3>Make a New Reservation</h3>
 
-<EditForm Model="@newRes" OnValidSubmit="OnSubmit">
+<EditForm Model="newRes" OnSubmit="OnSubmit">
     <DataAnnotationsValidator />
     <div class="row">
         <div class="col-md-4">
-            <RadzenDatePicker @bind-Value=@newRes.StartDate DateFormat="d" Change=@(args => OnChangeDate(args, "DatePicker", "dd/MM/yyyy")) />
-            <RadzenRadioButtonList @bind-Value=@value TValue="int" Orientation="Radzen.Orientation.Vertical" Change=@((args) => OnChangeRadio(args, "Select Hele dag/Halve Dag"))>
+            <RadzenDatePicker @bind-Value=@choosenDay DateFormat="d" Change=@(args => OnChangeDate(args, "DatePicker", "dd/MM/yyyy")) />
+            <RadzenRadioButtonList @bind-Value=@value TValue="int" Orientation="Radzen.Orientation.Horizontal" Change=@((args) => OnChangeRadio(args, "Select Hele dag/Halve Dag")) Style="margin-top:30px">
                 <Items>
-                    <RadzenRadioButtonListItem Text="Hele Dag" Value="8" />
-                    <RadzenRadioButtonListItem Text="halve Dag" Value="4" />
+                    <RadzenRadioButtonListItem Text="Full day" Value="8" />
+                    <RadzenRadioButtonListItem Text="Half day" Value="4" />
                 </Items>
             </RadzenRadioButtonList>
         </div>
         <div class="col-md-7" id="accordionExample">
-            @foreach (var room in result)
+            @foreach (var room in roomList)
             {
-                <Room Data="@times" BindingValueChanged="value => DateChanged(value)"></Room>
+                <Room RoomTitle="@room.Name" Data="@times" RoomId="@room.Id" BindingValueChanged="value => TimeChanged(value)" SubmitBtnClick="x => OnSubmit()"></Room>
             }
         </div>
     </div>
@@ -30,46 +32,101 @@
 @code {
     [Inject]
     public IReservationsService ReservationsService { get; set; }
-    DateTime today = DateTime.Parse("2021 nov 23");
-    int value = 1;
-    int valueX = 4;
+    DateTime choosenDay = DateTime.Parse("2021-11-24");
+    int value = 4;
+    bool loading = true;
     DateTime date = DateTime.Today.AddDays(1);
-    List<RoomsReadViewModel>? result = new List<RoomsReadViewModel>();
-    List<PickerTimeRange>? times = new List<PickerTimeRange>();
+    List<RoomsReadViewModel> roomList = new List<RoomsReadViewModel>();
+    List<PickerTimeRange> times = new List<PickerTimeRange>();
+    ReservationCreateViewModel newRes = new ReservationCreateViewModel();
 
-    PickerTimeRange eventResult = new PickerTimeRange();
+    string _authMessage;
+    string _userId;
+    IEnumerable<Claim> _claims = Enumerable.Empty<Claim>();
 
-    protected void DateChanged(PickerTimeRange time)
+    private static PickerTimeRange eventResult = new PickerTimeRange();
+
+    protected bool TimeChanged(PickerTimeRange time)
     {
-        eventResult = time;
-        Console.WriteLine(time.min);
-        Console.WriteLine("from reservation page: " + Newtonsoft.Json.JsonConvert.SerializeObject((PickerTimeRange)eventResult));
+        if (time.pick >= time.min && time.pick.Add(new TimeSpan(value, 0, 0)) <= time.max)
+        {
+            eventResult = time;
+            Console.WriteLine("from DateChanged: " + Newtonsoft.Json.JsonConvert.SerializeObject((PickerTimeRange)eventResult));
+            return true;
+        }
+        return false;
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        await GetClaimsPrincipalData();
+        await base.OnParametersSetAsync();
+    }
+    private async Task GetClaimsPrincipalData()
+    {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+
+        if (user.Identity.IsAuthenticated)
+        {
+            _authMessage = $"{user.Identity.Name} is authenticated.";
+            _claims = user.Claims;
+            _userId = user.FindFirst(c => c.Type == "sub")?.Value;
+        }
+        else
+        {
+            _authMessage = "The user is NOT authenticated.";
+        }
     }
 
     protected override async Task<Task> OnInitializedAsync()
     {
-        var res = await ReservationsService.GetReservationByDate(today, today.AddDays(1));
-        result = await Http.GetFromJsonAsync<List<RoomsReadViewModel>>("api/Rooms");
-        // var settings = await Http.GetFromJsonAsync<SettingReadViewModel>("api/Settings/active?date=2021-11-11");
+        await OnParametersSetAsync();
+        newRes = new OfficePlanner.Shared.ViewModels.ReservationCreateViewModel()
+        {
+            StartDate = choosenDay.Date + eventResult.pick,
+            EndDate = choosenDay.Date + eventResult.pick.Add(new TimeSpan(value, 0, 0)),
+            User = _userId,
+            Room = eventResult.roomId
+        };
+        Console.WriteLine("newRes: " + Newtonsoft.Json.JsonConvert.SerializeObject(newRes));
+
+        Console.WriteLine(_authMessage);
+        foreach (var item in _claims)
+        {
+            Console.WriteLine("claim: " + item);
+        }
+        Console.WriteLine(_userId);
+        await GetAvailableSpace();
+
+        return base.OnInitializedAsync();
+    }
+
+    async Task GetAvailableSpace()
+    {
+        var res = await ReservationsService.GetReservationByDate(choosenDay, choosenDay.AddDays(1));
+        roomList = await Http.GetFromJsonAsync<List<RoomsReadViewModel>>("api/Rooms");
         times = new List<PickerTimeRange>();
+
+        // var settings = await Http.GetFromJsonAsync<SettingReadViewModel>("api/Settings/active?date=2021-11-11");
 
         DateTime startHour = DateTime.Parse("2021 jan 01 07:00:00");
         DateTime endHour = DateTime.Parse("2021 jan 01 17:00:00");
 
-        foreach (var room in result)
+        foreach (var room in roomList)
         {
-            int deltaSeats = room.AvailableSeats - res.Reservations.Where(x => { return true /*room.Id == reservation.Room*/; }).Count();
+            int deltaSeats = room.AvailableSeats - res.Reservations.Where(x => x.Room == room.Id).Count();
             Console.WriteLine(deltaSeats);
             foreach (var reservation in res.Reservations)
             {
-                if (true/*room.Id == reservation.Room*/)
+                if (room.Id == reservation.Room)
                 {
                     var hoursBeforeAReservation = (reservation.StartDate.TimeOfDay - startHour.TimeOfDay).TotalHours;
                     var hoursAfterAReservation = (endHour.TimeOfDay - reservation.EndDate.TimeOfDay).TotalHours;
                     Console.WriteLine($"in foreach loop, delta hoursBeforeAReservation is: {hoursBeforeAReservation}");
                     Console.WriteLine($"in foreach loop, delta hoursAfterAReservation is: {hoursAfterAReservation}");
 
-                    if (hoursBeforeAReservation >= valueX)
+                    if (hoursBeforeAReservation >= value)
                     {
                         times.Add(new PickerTimeRange
                         {
@@ -78,7 +135,7 @@
                             max = reservation.StartDate.TimeOfDay
                         });
                     }
-                    if (hoursAfterAReservation >= valueX)
+                    if (hoursAfterAReservation >= value)
                     {
                         times.Add(new PickerTimeRange
                         {
@@ -95,16 +152,17 @@
                 Console.WriteLine($"in for loop, total free seats number: {i} of {deltaSeats}");
                 times.Add(new PickerTimeRange
                 {
-                    /* roomId = room.Id,*/
+                    roomId = room.Id,
                     min = startHour.TimeOfDay,
                     max = endHour.TimeOfDay
                 });
             }
+            Console.WriteLine("newRes: " + Newtonsoft.Json.JsonConvert.SerializeObject(newRes));
         }
 
 
         Console.WriteLine();
-        Console.WriteLine(Newtonsoft.Json.JsonConvert.SerializeObject(result));
+        Console.WriteLine(Newtonsoft.Json.JsonConvert.SerializeObject(roomList));
         Console.WriteLine("reservations:\n");
         foreach (var item in res.Reservations)
         {
@@ -115,33 +173,35 @@
         {
             Console.WriteLine(Newtonsoft.Json.JsonConvert.SerializeObject(item));
         }
-        return base.OnInitializedAsync();
     }
-
-    OfficePlanner.Shared.ViewModels.ReservationCreateViewModel newRes = new OfficePlanner.Shared.ViewModels.ReservationCreateViewModel()
+    async Task OnChangeDate(DateTime? value, string name, string format)
     {
-        StartDate = DateTime.Parse("2021 nov 23"),
-        User = "1",
-        Room = 1
-    };
-
-    void OnChangeDate(DateTime? value, string name, string format)
-    {
+        await GetAvailableSpace();
         Console.WriteLine($"{name} value changed to {value?.ToString(format)}");
     }
-    void OnChangeRadio(int? value, string name)
+    async Task OnChangeRadio(int? value, string name)
     {
+        await GetAvailableSpace();
         Console.WriteLine($"{name} value changed to {value}");
     }
     async Task OnSubmit()
     {
-        Console.WriteLine(Newtonsoft.Json.JsonConvert.SerializeObject(newRes));
-        var isValid = await ReservationsService.Validate(newRes);
-
-        if (isValid)
+        newRes = new OfficePlanner.Shared.ViewModels.ReservationCreateViewModel()
         {
-            await ReservationsService.CreateReservation(newRes);
-            Console.WriteLine("reservation is submitted");
+            StartDate = choosenDay.Date + eventResult.pick,
+            EndDate = choosenDay.Date + eventResult.pick.Add(new TimeSpan(value, 0, 0)),
+            User = _userId,
+            Room = eventResult.roomId
+        };
+        Console.WriteLine("from OnSubmit:  " + Newtonsoft.Json.JsonConvert.SerializeObject(newRes));
+        var validationResult = await ReservationsService.Validate(newRes);
+        if (validationResult)
+        {
+            if (TimeChanged(eventResult))
+            {
+                await ReservationsService.CreateReservation(newRes);
+                Console.WriteLine("reservation is submitted");
+            }
         }
         Console.WriteLine("reservation is unsuccessful");
 
