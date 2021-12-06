@@ -1,0 +1,62 @@
+﻿@page "/configuration/AddRoom"
+@inject HttpClient Http
+
+
+    <h3>New Room</h3>
+    <div class="row col-md-4">
+        <EditForm Model=@roomsFormModel OnValidSubmit=@CreateRoom>
+            <RadzenLabel Text="Name" Component="Name" style="display:block" />
+            <RadzenTextBox MaxLength="50" Name="Name" @bind-Value="roomsFormModel.Name" />
+            <RadzenLabel Text="Type" Component="Type" style="display:block" />
+            <RadzenTextBox MaxLength="50" Name="Type" @bind-Value="roomsFormModel.Type" />
+            <RadzenLabel Text="# of Seats" Component="AvailableSeats" style="display:block" />
+            <RadzenNumeric TValue="int" @bind-Value="@roomsFormModel.AvailableSeats" Name="AvailableSeats" style="display:block" />
+            <div style="display:block">
+                <input type="submit" class="btn btn-primary" value="Save" />
+                <a href="/configuration" class="btn btn-secondary">Back</a>
+            </div>
+        </EditForm>
+    </div>
+
+
+@code {
+    [Inject]
+    public IRoomService RoomService { get; set; }
+    [Inject]
+    NavigationManager NavigationManager { get; set; }
+    [Inject]
+    NotificationService NotificationService { get; set; }
+    [Parameter]
+    public string id { get; set; }
+    private NewRoomCreateViewModel roomsFormModel;
+
+    protected override async Task OnInitializedAsync()
+    {
+        roomsFormModel = new NewRoomCreateViewModel()
+        {
+            Name = "",
+            Type = "",
+            AvailableSeats = 0
+        };
+
+    }
+
+    async void CreateRoom(EditContext context)
+    {
+        RoomsCreateViewModel roomCreate = new()
+        {
+            Name = roomsFormModel.Name,
+            Type = roomsFormModel.Type
+        };
+        int newRoomId = await RoomService.CreateRoom(roomCreate);
+
+        RoomVersionsCreateViewModel versionCreate = new()
+        {
+            AvailableSeats = roomsFormModel.AvailableSeats,
+            StartDate = DateTime.Now.Date
+        };
+        bool versionRes = await RoomService.CreateRoomVersion(versionCreate, newRoomId);
+        NavigationManager.NavigateTo("/configuration");
+    }
+
+}

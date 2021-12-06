@@ -9,6 +9,7 @@ using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
 using OfficePlanner.Client.Services;
+using Radzen;
 
 namespace OfficePlanner.Client
 {
@@ -36,6 +37,8 @@ namespace OfficePlanner.Client
             {
                 client.BaseAddress = new Uri(builder.HostEnvironment.BaseAddress);
             });
+
+            builder.Services.AddScoped<NotificationService>();
 
             // Supply HttpClient instances that include access tokens when making requests to the server project
             builder.Services.AddScoped(sp => sp.GetRequiredService<IHttpClientFactory>().CreateClient("OfficePlanner.ServerAPI"));

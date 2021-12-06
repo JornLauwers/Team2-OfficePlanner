@@ -10,8 +10,12 @@ namespace OfficePlanner.Client.Services
     {
         Task<List<RoomsReadViewModel>> GetAllRooms(DateTime date);
         Task<RoomsReadViewModel> GetActiveVersion(int id);
-        Task<bool> CreateRoom(RoomsCreateViewModel room);
+        Task<int> CreateRoom(RoomsCreateViewModel room);
         Task<bool> CreateRoomVersion(RoomVersionsCreateViewModel roomVersion, int id);
         Task<bool> UpdateRoom(RoomsCreateViewModel room, int id);
+        Task<List<RoomVersionsReadViewModel>> GetAllVersions(int id);
+        Task<RoomVersionsReadViewModel> GetVersionById(int id);
+        Task<bool> UpdateRoomVersion(RoomVersionsCreateViewModel roomVersion, int id);
+        Task<bool> DeleteRoomVersion(int id);
     }
 }

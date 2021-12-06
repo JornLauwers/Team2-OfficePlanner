@@ -55,6 +55,31 @@ namespace OfficePlanner.Server.Controllers
             return NotFound();
         }
 
+        // GET api/Rooms/Versions/5
+        [HttpGet("Versions/{id}")]
+        public IActionResult GetAllVersions(int id)
+        {
+            var roomVersions = roomsRepository.GetAllVersions(id);
+            if (roomVersions != null)
+            {
+                return Ok(roomVersions);
+            }
+            return NotFound();
+        }
+
+
+        // GET api/Rooms/VersionDetails/5
+        [HttpGet("VersionDetails/{id}")]
+        public IActionResult GetVersionDetails(int id)
+        {
+            var roomVersion = roomsRepository.GetVersionById(id);
+            if (roomVersion != null)
+            {
+                return Ok(roomVersion);
+            }
+            return NotFound();
+        }
+
         // POST api/Rooms
         [HttpPost]
         public IActionResult CreateRoom(RoomsCreateViewModel room)
@@ -87,6 +112,30 @@ namespace OfficePlanner.Server.Controllers
             if (ModelState.IsValid)
             {
                 this.roomsRepository.UpdateRoom(room, id);
+                return Ok(ModelState);
+            }
+            return BadRequest(ModelState);
+        }
+
+        // PUT api/Rooms/Versions/5
+        [HttpPut("Versions/{id}")]
+        public IActionResult UpdateRoomVersion(int id, [FromBody] RoomVersionsCreateViewModel room)
+        {
+            if (ModelState.IsValid)
+            {
+                this.roomsRepository.UpdateRoomVersion(room, id);
+                return Ok(ModelState);
+            }
+            return BadRequest(ModelState);
+        }
+
+        // DELETE api/Rooms/Versions/5
+        [HttpDelete("Versions/{id}")]
+        public IActionResult DeleteRoomVersion(int id)
+        {
+            if (ModelState.IsValid)
+            {
+                this.roomsRepository.DeleteRoomVersion(id);
                 return Ok(ModelState);
             }
             return BadRequest(ModelState);

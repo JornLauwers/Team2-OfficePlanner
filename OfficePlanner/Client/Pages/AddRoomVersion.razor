@@ -1,0 +1,75 @@
+﻿@page "/configuration/roomversion/add/{id}"
+@inject HttpClient Http
+
+@if (formModel == null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <h3>Adding Version for @activeRoom.Name</h3>
+    <div class="row col-md-4">
+        <EditForm Model=@formModel OnValidSubmit=@CreateRoomVersion>
+            <RadzenLabel Text="Version start date" Component="StartDate" style="display:block" />
+            <RadzenDatePicker ShowTime="false" DateFormat="dd/MM/yyyy" TValue="DateTime" @bind-Value="@formModel.StartDate" Name="StartDate" />
+            <RadzenLabel Text="# of Seats" Component="AvailableSeats" style="display:block" />
+            <RadzenNumeric TValue="int" @bind-Value="@formModel.AvailableSeats" Name="AvailableSeats" style="display:block" />
+            <div style="display:block">
+                <input type="submit" class="btn btn-primary" value="Save" />
+                <a href="/configuration/rooms/@id" class="btn btn-secondary">Back</a>
+            </div>
+        </EditForm>
+    </div>
+}
+
+
+@code {
+    [Inject]
+    public IRoomService RoomService { get; set; }
+    [Inject]
+    NavigationManager NavigationManager { get; set; }
+    [Inject]
+    NotificationService NotificationService { get; set; }
+    [Parameter]
+    public string id { get; set; }
+    private RoomsReadViewModel activeRoom;
+    private List<RoomVersionsReadViewModel> roomVersions;
+    private RoomVersionsCreateViewModel formModel;
+
+    protected override async Task OnInitializedAsync()
+    {
+        activeRoom = await RoomService.GetActiveVersion(Int32.Parse(id));
+        roomVersions = await RoomService.GetAllVersions(Int32.Parse(id));
+        var earliestVersionDate = roomVersions.OrderByDescending(s => s.StartDate).FirstOrDefault(s => s.RoomId == activeRoom.Id).StartDate.AddDays(1);
+        if (earliestVersionDate.Date <= DateTime.Now.Date)
+        {
+            earliestVersionDate = DateTime.Now.Date.AddDays(1);
+        }
+        formModel = new RoomVersionsCreateViewModel()
+        {
+            AvailableSeats = activeRoom.AvailableSeats,
+            StartDate = earliestVersionDate
+        };
+
+    }
+
+    async void CreateRoomVersion(EditContext context)
+    {
+        bool res = await RoomService.CreateRoomVersion(formModel, Int32.Parse(id));
+        res = true;
+        if (res)
+        {
+            ShowNotification(new NotificationMessage { Severity = NotificationSeverity.Success, Summary = "Details updated", Detail = "Success", Duration = 4000 });
+        }
+        else
+        {
+            ShowNotification(new NotificationMessage { Severity = NotificationSeverity.Error, Summary = "Something went wrong", Detail = "Error", Duration = 4000 });
+        }
+        NavigationManager.NavigateTo($"/configuration/rooms/{id}");
+    }
+
+    void ShowNotification(NotificationMessage message)
+    {
+        NotificationService.Notify(message);
+    }
+}
