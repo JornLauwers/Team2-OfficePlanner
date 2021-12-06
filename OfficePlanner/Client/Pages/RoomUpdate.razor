@@ -1,0 +1,101 @@
+﻿@page "/configuration/rooms/{id}"
+@inject HttpClient Http
+
+@if (roomsFormModel == null || roomVersions == null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <h3>Edit Room: @activeRoom.Name</h3>
+    <div class="row col-md-4">
+        <h4>Basic info</h4>
+        <EditForm Model=@roomsFormModel OnValidSubmit=@UpdateRoom>
+            <RadzenLabel Text="Name" Component="Name" style="display:block" />
+            <RadzenTextBox MaxLength="50" Name="Name" @bind-Value="roomsFormModel.Name" />
+            <RadzenLabel Text="Type" Component="Type" style="display:block" />
+            <RadzenTextBox MaxLength="50" Name="Type" @bind-Value="roomsFormModel.Type" />
+            <div style="display:block">
+                <input type="submit" class="btn btn-primary" value="Save" />
+                <a href="/configuration" class="btn btn-secondary">Back</a>
+            </div>
+        </EditForm>
+    </div>
+
+    <h4>Room Versions</h4>
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Id</th>
+                <th>Valid From</th>
+                <th>Valid Until</th>
+                <th># of Seats</th>
+                <th><a href="/configuration/roomversion/add/@activeRoom.Id" class="btn btn-primary">Add</a></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var version in roomVersions)
+            {
+            <tr>
+                <td>@version.Id</td>
+                <td>@version.StartDate.ToString("dd-MM-yyyy")</td>
+                <td>@(version.EndDate == DateTime.MaxValue ? "" : version.EndDate.ToString("dd-MM-yyyy"))</td>
+                <td>@version.AvailableSeats</td>
+                <td>
+                    @if (version.StartDate > DateTime.Now.Date)
+                    {
+                        <a href="/configuration/roomversion/@version.Id" class="btn btn-primary">Edit</a>
+                        <a href="/configuration/roomversion/delete/@version.Id" class="btn btn-primary">Delete</a>
+                    }
+                </td>
+            </tr>
+            }
+        </tbody>
+    </table>
+}
+
+
+@code {
+    [Inject]
+    public IRoomService RoomService { get; set; }
+    [Inject]
+    NavigationManager NavigationManager { get; set; }
+    [Inject]
+    NotificationService NotificationService { get; set; }
+    [Parameter]
+    public string id { get; set; }
+    private RoomsReadViewModel activeRoom;
+    private List<RoomVersionsReadViewModel> roomVersions;
+    private RoomsCreateViewModel roomsFormModel;
+
+    protected override async Task OnInitializedAsync()
+    {
+        activeRoom = await RoomService.GetActiveVersion(Int32.Parse(id));
+        roomVersions = await RoomService.GetAllVersions(Int32.Parse(id));
+        roomsFormModel = new RoomsCreateViewModel()
+        {
+            Name = activeRoom.Name,
+            Type = activeRoom.Type
+        };
+
+    }
+
+    async void UpdateRoom(EditContext context)
+    {
+        bool res = await RoomService.UpdateRoom(roomsFormModel, Int32.Parse(id));
+        res = true;
+        if (res)
+        {
+            ShowNotification(new NotificationMessage { Severity = NotificationSeverity.Success, Summary = "Details updated", Detail = "Success", Duration = 4000 });
+        }
+        else
+        {
+            ShowNotification(new NotificationMessage { Severity = NotificationSeverity.Error, Summary = "Something went wrong", Detail = "Error", Duration = 4000 });
+        }
+    }
+
+    void ShowNotification(NotificationMessage message)
+    {
+        NotificationService.Notify(message);
+    }
+}

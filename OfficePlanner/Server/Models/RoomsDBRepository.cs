@@ -24,6 +24,17 @@ namespace OfficePlanner.Server.Models
             _context.SaveChanges();
         }
 
+        private void UpdateDBRecord(RoomVersions<ApplicationUser> roomVersion)
+        {
+            _context.Entry(roomVersion).State = EntityState.Modified;
+            _context.SaveChanges();
+        }
+        private void DeleteDBRecord(RoomVersions<ApplicationUser> roomVersion)
+        {
+            _context.Entry(roomVersion).State = EntityState.Deleted;
+            _context.SaveChanges();
+        }
+
         public int CreateRoom(RoomsCreateViewModel rooms)
         {
 
@@ -143,6 +154,64 @@ namespace OfficePlanner.Server.Models
             var roomVersion = _context.RoomVersions.FirstOrDefault(r => r.RoomId == roomId && r.EndDate.Date >= validOnDate.Date && r.StartDate.Date <= validOnDate.Date);
 
             return roomVersion;
+        }
+
+        public List<RoomVersionsReadViewModel> GetAllVersions(int id)
+        {
+            var roomVersions = _context.RoomVersions.Where(r => r.RoomId == id).ToList();
+            List<RoomVersionsReadViewModel> roomVersionsReadModel = new List<RoomVersionsReadViewModel>();
+
+            foreach (var version in roomVersions)
+            {
+                roomVersionsReadModel.Add(new RoomVersionsReadViewModel { 
+                AvailableSeats = version.AvailableSeats,
+                StartDate = version.StartDate,
+                EndDate = version.EndDate,
+                Id = version.Id,
+                RoomId = version.RoomId
+                });
+            }
+
+            return roomVersionsReadModel;
+        }
+
+        public RoomVersionsReadViewModel GetVersionById(int id)
+        {
+            var roomVersion = _context.RoomVersions.FirstOrDefault(r => r.Id == id);
+            RoomVersionsReadViewModel readModel = new()
+            {
+                Id = roomVersion.Id,
+                AvailableSeats = roomVersion.AvailableSeats,
+                EndDate = roomVersion.EndDate,
+                RoomId = roomVersion.RoomId,
+                StartDate = roomVersion.StartDate
+            };
+
+            return readModel;
+        }
+
+        public bool DeleteRoomVersion(int id)
+        {
+            var roomVersion = _context.RoomVersions.FirstOrDefault(r => r.Id == id);
+            int roomId = roomVersion.RoomId;
+            DeleteDBRecord(roomVersion);
+
+            var newMaxDateRoomVersion = _context.RoomVersions.OrderByDescending(s => s.StartDate).FirstOrDefault(r => r.RoomId == roomId);
+            newMaxDateRoomVersion.EndDate = DateTime.MaxValue;
+            UpdateDBRecord(newMaxDateRoomVersion);
+
+            return true;
+
+        }
+
+        public bool UpdateRoomVersion (RoomVersionsCreateViewModel roomVersion, int id)
+        {
+            var dbObject = _context.RoomVersions.FirstOrDefault(r => r.Id == id);
+            dbObject.AvailableSeats = roomVersion.AvailableSeats;
+            dbObject.StartDate = roomVersion.StartDate;
+            UpdateDBRecord(dbObject);
+            return true;
+
         }
     }
 }

@@ -1,0 +1,67 @@
+﻿@page "/configuration/roomversion/{id}"
+@inject HttpClient Http
+
+@if (formModel == null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+<h3>Editing version for @activeRoom.Name starting on @formModel.StartDate.ToString("dd/MM/yyyy")</h3>
+    <div class="row col-md-4">
+        <EditForm Model=@formModel OnValidSubmit=@UpdateRoomVersion>
+            <RadzenLabel Text="# of Seats" Component="AvailableSeats" style="display:block" />
+            <RadzenNumeric TValue="int" @bind-Value="@formModel.AvailableSeats" Name="AvailableSeats" style="display:block" />
+            <div style="display:block">
+                <input type="submit" class="btn btn-primary" value="Save" />
+                <a href="/configuration/rooms/@roomVersion.RoomId" class="btn btn-secondary">Back</a>
+            </div>
+        </EditForm>
+    </div>
+}
+
+
+@code {
+    [Inject]
+    public IRoomService RoomService { get; set; }
+    [Inject]
+    NavigationManager NavigationManager { get; set; }
+    [Inject]
+    NotificationService NotificationService { get; set; }
+    [Parameter]
+    public string id { get; set; }
+    private RoomsReadViewModel activeRoom;
+    private RoomVersionsReadViewModel roomVersion;
+    private RoomVersionsCreateViewModel formModel;
+
+    protected override async Task OnInitializedAsync()
+    {
+        roomVersion = await RoomService.GetVersionById(Int32.Parse(id));
+        activeRoom = await RoomService.GetActiveVersion(roomVersion.RoomId);
+        formModel = new()
+        {
+            AvailableSeats = roomVersion.AvailableSeats,
+            StartDate = roomVersion.StartDate
+        };
+    }
+
+    async void UpdateRoomVersion(EditContext context)
+    {
+        bool res = await RoomService.UpdateRoomVersion(formModel, Int32.Parse(id));
+        res = true;
+        if (res)
+        {
+            ShowNotification(new NotificationMessage { Severity = NotificationSeverity.Success, Summary = "Details updated", Detail = "Success", Duration = 4000 });
+        }
+        else
+        {
+            ShowNotification(new NotificationMessage { Severity = NotificationSeverity.Error, Summary = "Something went wrong", Detail = "Error", Duration = 4000 });
+        }
+        NavigationManager.NavigateTo($"/configuration/rooms/{roomVersion.RoomId}");
+    }
+
+    void ShowNotification(NotificationMessage message)
+    {
+        NotificationService.Notify(message);
+    }
+}

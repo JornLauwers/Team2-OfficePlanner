@@ -2,12 +2,13 @@
 @inject HttpClient Http
 <h3>Configuration</h3>
 
-@if (allSettings == null)
+@if (allSettings == null || allRooms == null)
 {
     <p><em>Loading...</em></p>
 }
 else
 {
+    <h4>Settings</h4>
     <table class="table">
         <thead>
             <tr>
@@ -20,10 +21,10 @@ else
         <tbody>
             @foreach (var setting in allSettings)
             {
-                <tr @onclick="@(e => UpdateActiveSettingDisplay(e, setting.FromDate))" class="@(activeSetting.Id == setting.Id?"table-active":"")">
+                <tr @onclick="@(e => UpdateActiveSettingDisplay(e, setting.FromDate))" class="@(activeSetting.Id == setting.Id ? "table-active" : "")">
                     <td>@setting.Id</td>
                     <td>@setting.FromDate.ToString("dd-MM-yyyy")</td>
-                    <td>@(setting.UntilDate == DateTime.MaxValue?"":setting.UntilDate.ToString("dd-MM-yyyy"))</td>
+                    <td>@(setting.UntilDate == DateTime.MaxValue ? "" : setting.UntilDate.ToString("dd-MM-yyyy"))</td>
                     <td>
                         @if (setting.FromDate > DateTime.Now.Date)
                         {
@@ -64,11 +65,11 @@ else
             </tr>
             <tr>
                 <td>Target reservations</td>
-                <td>@activeSetting.DaysRequiredInOffice days</td>
+                <td>@activeSetting.DaysRequiredInOffice days/week</td>
             </tr>
             <tr>
                 <td>Reservation window</td>
-                <td>@activeSetting.FutureReservationWindow days</td>
+                <td>@activeSetting.FutureReservationWindow days in the future</td>
             </tr>
             <tr>
                 <td>Weekend reservations</td>
@@ -77,6 +78,30 @@ else
         </tbody>
 
     </table>
+    <h4>Rooms</h4>
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Id</th>
+                <th>Name</th>
+                <th># of Seats</th>
+                <th><a href="/configuration/AddRoom" class="btn btn-primary">Add</a></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var room in allRooms)
+            {
+                <tr>
+                    <td>@room.Id</td>
+                    <td>@room.Name</td>
+                    <td>@room.AvailableSeats</td>
+                    <td> 
+                            <a href="/configuration/rooms/@room.Id" class="btn btn-primary">Edit</a>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
 }
 
 @code {
@@ -84,11 +109,15 @@ else
     public ISettingsService SettingsService { get; set; }
     public List<SettingReadViewModel> allSettings;
     private SettingReadViewModel activeSetting;
+    [Inject]
+    public IRoomService RoomService { get; set; }
+    public List<RoomsReadViewModel> allRooms;
 
     protected override async Task OnInitializedAsync()
     {
         allSettings = await SettingsService.GetAllSettings();
         activeSetting = await SettingsService.GetActiveSetting(DateTime.Now);
+        allRooms = await RoomService.GetAllRooms(DateTime.Now);
     }
 
     async Task UpdateActiveSettingDisplay(MouseEventArgs mouseEventArgs, DateTime versionDate)

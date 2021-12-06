@@ -17,6 +17,10 @@ namespace OfficePlanner.Server.Models
         int GetFreeSeats(int roomId, DateTime dateTime);
         void UpdateRoom(RoomsCreateViewModel room, int id);
         List<RoomsReadViewModel> GetAllActiveRooms(DateTime date);
+        List<RoomVersionsReadViewModel> GetAllVersions(int id);
+        RoomVersionsReadViewModel GetVersionById(int id);
+        bool DeleteRoomVersion(int id);
+        bool UpdateRoomVersion(RoomVersionsCreateViewModel roomVersion, int id);
 
     }
 }

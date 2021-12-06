@@ -1,0 +1,57 @@
+﻿@page "/configuration/roomversion/delete/{id}"
+@inject HttpClient Http
+
+@if (activeRoom == null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <h3>Confirm Room Version delete for @activeRoom.Name</h3>
+    <table class="table">
+        <tbody>
+            <tr>
+                <td>Id</td>
+                <td>@roomVersion.Id</td>
+            </tr>
+            <tr>
+                <td># of seats</td>
+                <td>@roomVersion.AvailableSeats</td>
+            </tr>
+            <tr>
+                <td>Version start date</td>
+                <td>@roomVersion.StartDate.ToString("dd/MM/yyyy")</td>
+            </tr>
+        </tbody>
+    </table>
+    <div style="display:block">
+        <input type="submit" class="btn btn-primary" value="Delete" @onclick="@(e => RemoveRoomVersion(e, roomVersion.Id))" />
+        <a href="/configuration/rooms/@roomVersion.RoomId" class="btn btn-secondary">Cancel</a>
+    </div>
+}
+
+
+@code {
+    [Inject]
+    public IRoomService RoomService { get; set; }
+    [Inject]
+    NavigationManager NavigationManager { get; set; }
+    [Parameter]
+    public string id { get; set; }
+    private RoomsReadViewModel activeRoom;
+    private RoomVersionsReadViewModel roomVersion;
+
+    protected override async Task OnInitializedAsync()
+    {
+        roomVersion = await RoomService.GetVersionById(Int32.Parse(id));
+        activeRoom = await RoomService.GetActiveVersion(roomVersion.RoomId);
+
+    }
+
+    async void RemoveRoomVersion(MouseEventArgs mouseEventArgs, int id)
+    {
+        bool res = await RoomService.DeleteRoomVersion(id);
+
+        NavigationManager.NavigateTo($"/configuration/rooms/{roomVersion.RoomId}");
+    }
+}
