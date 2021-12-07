@@ -1,0 +1,44 @@
+﻿@page "/user"
+
+<div class="row">
+    <div class="col-md-6">
+        <RadzenFieldset Text="User Info">
+            <div class="row">
+                <div class="col-md-4 align-items-center d-flex">
+                    <RadzenLabel Text="Username" />
+                </div>
+                <div class="col-md-8">
+                    <RadzenTextBox style="width: 100%;" Disabled="true" Placeholder="janjansen@avento.be" />
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-4 align-items-center d-flex">
+                    <RadzenLabel Text="Firstname" />
+                </div>
+                <div class="col-md-8">
+                    <RadzenTextBox style="width: 100%;" Disabled="true" Placeholder="Jan" />
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-4 align-items-center d-flex">
+                    <RadzenLabel Text="Lastname" />
+                </div>
+                <div class="col-md-8">
+                    <RadzenTextBox style="width: 100%;" Disabled="true" Placeholder="Janssen" />
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-4 align-items-center d-flex">
+                    <RadzenLabel Text="Progression Reservations this week"/>
+                </div>
+                <div class="col-md-8">
+                    <RadzenProgressBar Value="75" Max="100" Style="margin-bottom: 20px" />
+                </div>
+            </div>
+        </RadzenFieldset>
+        </div>
+    </div>
+
+@code {
+
+}
