@@ -17,12 +17,20 @@
                 </Items>
             </RadzenRadioButtonList>
         </div>
-        <div class="col-md-7" id="accordionExample">
-            @foreach (var room in roomList)
-            {
-                <Room RoomTitle="@room.Name" Data="@times" RoomId="@room.Id" BindingValueChanged="value => TimeChanged(value)" SubmitBtnClick="x => OnSubmit()"></Room>
-            }
-        </div>
+        @if (loading)
+        {
+            <p><em>Loading...</em></p>
+        }
+        else
+        {
+            <div class="col-md-7" id="accordionExample">
+                @foreach (var room in roomList)
+                {
+                    <Room RoomTitle="@room.Name" Data="@times" RoomId="@room.Id" BindingValueChanged="value => TimeChanged(value)" SubmitBtnClick="x => OnSubmit()"></Room>
+                }
+            </div>
+        }
+
     </div>
 </EditForm>
 
@@ -32,7 +40,7 @@
 @code {
     [Inject]
     public IReservationsService ReservationsService { get; set; }
-    DateTime choosenDay = DateTime.Parse("2021-11-24");
+    DateTime choosenDay = DateTime.Today;
     int value = 4;
     bool loading = true;
     DateTime date = DateTime.Today.AddDays(1);
@@ -48,11 +56,16 @@
 
     protected bool TimeChanged(PickerTimeRange time)
     {
+        Console.WriteLine("from DateChanged: " + Newtonsoft.Json.JsonConvert.SerializeObject((PickerTimeRange)time));
         if (time.pick >= time.min && time.pick.Add(new TimeSpan(value, 0, 0)) <= time.max)
         {
             eventResult = time;
-            Console.WriteLine("from DateChanged: " + Newtonsoft.Json.JsonConvert.SerializeObject((PickerTimeRange)eventResult));
+            Console.WriteLine("from DateChanged: time picked is between given range");
             return true;
+        }
+        else
+        {
+            Console.WriteLine("from DateChanged: time picked is NOT between given range");
         }
         return false;
     }
@@ -104,6 +117,7 @@
 
     async Task GetAvailableSpace()
     {
+        loading = true;
         var res = await ReservationsService.GetReservationByDate(choosenDay, choosenDay.AddDays(1));
         roomList = await Http.GetFromJsonAsync<List<RoomsReadViewModel>>("api/Rooms");
         times = new List<PickerTimeRange>();
@@ -173,6 +187,7 @@
         {
             Console.WriteLine(Newtonsoft.Json.JsonConvert.SerializeObject(item));
         }
+        loading = false;
     }
     async Task OnChangeDate(DateTime? value, string name, string format)
     {
@@ -197,13 +212,17 @@
         var validationResult = await ReservationsService.Validate(newRes);
         if (validationResult)
         {
+            Console.WriteLine("reservation is validated");
             if (TimeChanged(eventResult))
             {
                 await ReservationsService.CreateReservation(newRes);
                 Console.WriteLine("reservation is submitted");
             }
         }
-        Console.WriteLine("reservation is unsuccessful");
+        else
+        {
+            Console.WriteLine("reservation is unsuccessful");
+        }
 
     }
     void OnChange(DateTime? value, string name, string format)

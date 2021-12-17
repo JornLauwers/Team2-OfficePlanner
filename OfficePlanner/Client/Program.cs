@@ -45,6 +45,8 @@ namespace OfficePlanner.Client
 
             builder.Services.AddApiAuthorization();
 
+            builder.Services.AddScoped<DialogService>();
+
             await builder.Build().RunAsync();
         }
     }
