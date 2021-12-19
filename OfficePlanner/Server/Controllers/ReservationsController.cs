@@ -75,7 +75,7 @@ namespace OfficePlanner.Server.Controllers
             }
             return BadRequest(ModelState);
         }
-        [HttpGet("DeleteReservation")]
+        [HttpGet("DeleteReservation/{id}")]
         public IActionResult DeleteReservation(int id)
         {
             var r = this.reservationsRepository.GetById(id);

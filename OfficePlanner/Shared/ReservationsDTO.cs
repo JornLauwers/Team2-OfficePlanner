@@ -19,5 +19,8 @@ namespace OfficePlanner.Shared
         public string User { get; set; }
         [Required]
         public int Room { get; set; }
+        public string RoomName { get; set; }
+        public string UserName { get; set; }
+
     }
 }

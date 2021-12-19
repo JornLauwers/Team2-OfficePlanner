@@ -40,7 +40,15 @@ namespace OfficePlanner.Server.Models
             var newlist = new List<ReservationsDTO>();
             for (int i = 0; i < listRes.Count; i++)
             {
-                newlist.Add(_mapper.Map<ReservationsDTO>(listRes[i]));
+                newlist.Add(new ReservationsDTO { 
+                    Room = listRes[i].Room,
+                    User = listRes[i].User,
+                    UserName = _context.Users.Find(listRes[i].User.ToString()).UserName,
+                    RoomName = _context.Rooms.Find(listRes[i].Room).Name,
+                    StartDate = listRes[i].StartDate,
+                    EndDate = listRes[i].EndDate,
+                    Id = listRes[i].Id
+                });
             }
             return newlist;
         }

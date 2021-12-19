@@ -1,12 +1,10 @@
 ﻿@page "/calendar"
+@inject DialogService DialogService
 <h3>Calender</h3>
-
-
-
-<RadzenScheduler LoadData="@OnLoadData" Style="height:800px" SelectedIndex="1" Data="@data" TItem="DataItem" StartProperty="Start" EndProperty="End" TextProperty="Text">
-    <RadzenDayView />
-    <RadzenWeekView />
-</RadzenScheduler>
+    <RadzenScheduler  @ref=@scheduler AppointmentSelect=@OnAppointmentSelect LoadData="@OnLoadData" Style="height:800px" SelectedIndex="1" Data="@data" TItem="DataItem" StartProperty="Start" EndProperty="End" TextProperty="Text">
+        <RadzenDayView />
+        <RadzenWeekView />
+    </RadzenScheduler>
 
 
 
@@ -14,11 +12,15 @@
     [Inject]
     public IReservationsService ReservationsService { get; set; }
     List<DataItem> data;
-    class DataItem
+
+    RadzenScheduler<DataItem> scheduler;
+
+    async Task OnAppointmentSelect(SchedulerAppointmentSelectEventArgs<DataItem> args)
     {
-        public DateTime Start { get; set; }
-        public DateTime End { get; set; }
-        public string Text { get; set; }
+        Console.WriteLine($"from OnAppointmentSelect(): {args.Data.Text}");
+        await DialogService.OpenAsync<EditAppointmentPage>("Delete Reservation", new Dictionary<string, object> { { "Reservation", args.Data } });
+        Console.WriteLine($"after OpenAsync()");
+        await scheduler.Reload();
     }
 
     async Task OnLoadData(SchedulerLoadDataEventArgs args)
@@ -30,9 +32,11 @@
             data.Add(
                 new DataItem
                 {
+                    Id = item.Id,
+                    Uid = item.User,
                     Start = item.StartDate,
                     End = item.EndDate,
-                    Text = item.Room.ToString()
+                    Text = $"{item.UserName} is in {item.RoomName} from {item.StartDate.TimeOfDay} till {item.EndDate.TimeOfDay}."
                 }
             );
         }
