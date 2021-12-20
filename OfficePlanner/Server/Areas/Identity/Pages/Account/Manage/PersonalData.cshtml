@@ -1,0 +1,29 @@
+﻿@page
+@model PersonalDataModel
+@{
+    ViewData["Title"] = "Users Overview";
+    ViewData["ActivePage"] = ManageNavPages.PersonalData;
+}
+
+<h4>@ViewData["Title"]</h4>
+
+<div class="row px-3">
+    <div class="col-md-9">
+        <p>Select the week of which you want an overview!</p>
+    </div>
+    <div class="col-lg-12 col-xl-4 p-3">
+        <RadzenCard>
+            <h4 class="mb-4">Calendar</h4>
+
+        </RadzenCard>
+    </div>
+</div>
+
+@{
+    DateTime value = DateTime.Now;
+}
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}
+
