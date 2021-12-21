@@ -1,5 +1,9 @@
 ﻿@inherits LayoutComponentBase
-    <RadzenDialog />
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@using System.Security.Claims
+@inject HttpClient Http
+
+<RadzenDialog />
 <div class="page">
     <div class="sidebar">
         <NavMenu />
@@ -7,6 +11,7 @@
 
     <div class="main">
         <div class="top-row px-4 auth">
+            Weekly reservation target: @ReservationDays / @RequiredReservationDays
             <LoginDisplay />
             <a href="https://docs.microsoft.com/aspnet/" target="_blank">About</a>
         </div>
@@ -16,3 +21,53 @@
         </div>
     </div>
 </div>
+
+@code {
+    [Inject]
+    public ISettingsService SettingsService { get; set; }
+    private SettingReadViewModel activeSetting;
+    [Inject]
+    public IReservationsService ReservationService { get; set; }
+    public List<RoomsReadViewModel> allRooms;
+    public ReservationListView reservations;
+
+    string _userId;
+    IEnumerable<Claim> _claims = Enumerable.Empty<Claim>();
+
+
+    public int ReservationDays;
+    public int RequiredReservationDays;
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        activeSetting = await SettingsService.GetActiveSetting(DateTime.Now);
+
+
+        DayOfWeek day = DateTime.Now.DayOfWeek;
+        int days = day - DayOfWeek.Monday;
+        DateTime start = DateTime.Now.Date.AddDays(-days);
+        DateTime end = start.Date.AddDays(6);
+        reservations = await ReservationService.GetReservationByDate(start, end);
+
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+
+        _claims = user.Claims;
+        _userId = user.FindFirst(c => c.Type == "sub")?.Value;
+
+        var reservationsFromUser = reservations.Reservations.Where(r => r.User == _userId);
+
+        int totalHours = 0;
+        foreach (var reservation in reservationsFromUser)
+        {
+            var length = (reservation.EndDate - reservation.StartDate).TotalHours;
+            totalHours = totalHours + (int)length;
+        }
+
+        ReservationDays = totalHours / 8;
+        RequiredReservationDays = activeSetting.DaysRequiredInOffice;
+
+    }
+
+}
