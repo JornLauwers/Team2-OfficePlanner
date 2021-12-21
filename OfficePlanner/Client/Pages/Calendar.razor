@@ -2,8 +2,8 @@
 @inject DialogService DialogService
 <h3>Calender</h3>
     <RadzenScheduler  @ref=@scheduler AppointmentSelect=@OnAppointmentSelect LoadData="@OnLoadData" Style="height:800px" SelectedIndex="1" Data="@data" TItem="DataItem" StartProperty="Start" EndProperty="End" TextProperty="Text">
-        <RadzenDayView />
-        <RadzenWeekView />
+        <RadzenDayView StartTime=@StartTime />
+        <RadzenWeekView StartTime=@StartTime />
     </RadzenScheduler>
 
 
@@ -11,15 +11,16 @@
 @code {
     [Inject]
     public IReservationsService ReservationsService { get; set; }
+    [Inject]
+    public ISettingsService SettingsService { get; set; }
     List<DataItem> data;
-
+    private TimeSpan StartTime { get; set; }
     RadzenScheduler<DataItem> scheduler;
+    SettingReadViewModel settins { get; set; }
 
     async Task OnAppointmentSelect(SchedulerAppointmentSelectEventArgs<DataItem> args)
     {
-        Console.WriteLine($"from OnAppointmentSelect(): {args.Data.Text}");
         await DialogService.OpenAsync<EditAppointmentPage>("Delete Reservation", new Dictionary<string, object> { { "Reservation", args.Data } });
-        Console.WriteLine($"after OpenAsync()");
         await scheduler.Reload();
     }
 
@@ -27,6 +28,7 @@
     {
         ReservationListView fetchedDada = await ReservationsService.GetReservationByDate(args.Start, args.End);
         data = new List<DataItem>();
+        StartTime = TimeSpan.Parse(settins.Workhours.StartHour);
         foreach (var item in fetchedDada.Reservations)
         {
             data.Add(
@@ -43,6 +45,15 @@
     }
     protected override async Task<Task> OnInitializedAsync()
     {
+        //settins = await SettingsService.GetActiveSetting(DateTime.Today);
+        settins = new SettingReadViewModel
+        {
+            Workhours = new OfficePlanner.Shared.Workhours
+            {
+                StartHour = "7:00:00",
+                EndHour = "16:00:00"
+            }
+        };
         return base.OnInitializedAsync();
     }
 }
