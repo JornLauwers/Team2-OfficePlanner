@@ -9,72 +9,80 @@
     <DataAnnotationsValidator />
     <div class="row">
         <div class="col-md-4">
-            <RadzenDatePicker @bind-Value=@choosenDay DateFormat="d" Change=@(args => OnChangeDate(args, "DatePicker", "dd/MM/yyyy")) />
+            <RadzenDatePicker @bind-Value=@choosenDay DateFormat="dd-MM-yyyy" />
             <RadzenRadioButtonList @bind-Value=@value TValue="int" Orientation="Radzen.Orientation.Horizontal" Change=@((args) => OnChangeRadio(args, "Select Hele dag/Halve Dag")) Style="margin-top:30px">
                 <Items>
                     <RadzenRadioButtonListItem Text="Full day" Value="8" />
                     <RadzenRadioButtonListItem Text="Half day" Value="4" />
                 </Items>
             </RadzenRadioButtonList>
+            @if (displayMessage)
+            {
+                <div class="alert alert-@(positive ? "success" : "danger")" role="alert" style="margin-top: 30px">
+                    @message
+                </div>
+            }
         </div>
-        @if (loading)
-        {
-            <p><em>Loading...</em></p>
-        }
-        else
-        {
-            <div class="col-md-7" id="accordionExample">
-                @foreach (var room in roomList)
-                {
-                    <Room RoomTitle="@room.Name" Data="@times" RoomId="@room.Id" BindingValueChanged="value => TimeChanged(value)" SubmitBtnClick="x => OnSubmit()"></Room>
-                }
-            </div>
-        }
-
+        <div class="col-md-7" id="accordionExample">
+            @foreach (var room in roomList)
+            {
+                <Room RoomTitle="@room.Name" Data="@times" RoomId="@room.Id" BindingValueChanged="value => TimeChanged(value)" SubmitBtnClick="x => OnSubmit()"></Room>
+            }
+        </div>
     </div>
 </EditForm>
-
-
 
 
 @code {
     [Inject]
     public IReservationsService ReservationsService { get; set; }
-    DateTime choosenDay = DateTime.Today;
-    int value = 4;
-    bool loading = true;
-    DateTime date = DateTime.Today.AddDays(1);
+    [Inject]
+    public ISettingsService SettingsService { get; set; }
+    [Inject]
+    public IRoomService RoomService { get; set; }
+
     List<RoomsReadViewModel> roomList = new List<RoomsReadViewModel>();
     List<PickerTimeRange> times = new List<PickerTimeRange>();
     ReservationCreateViewModel newRes = new ReservationCreateViewModel();
-
-    string _authMessage;
-    string _userId;
     IEnumerable<Claim> _claims = Enumerable.Empty<Claim>();
+    SettingReadViewModel settins { get; set; }
+
+    DateTime choosenDay = DateTime.Today;
+    DateTime date = DateTime.Today.AddDays(1);
+    int value = 4;
+    private bool positive = true;
+    private bool displayMessage = false;
+    private string message;
+    private string _authMessage;
+    private string _userId;
 
     private static PickerTimeRange eventResult = new PickerTimeRange();
 
     protected bool TimeChanged(PickerTimeRange time)
     {
+        eventResult = time;
         Console.WriteLine("from DateChanged: " + Newtonsoft.Json.JsonConvert.SerializeObject((PickerTimeRange)time));
         if (time.pick >= time.min && time.pick.Add(new TimeSpan(value, 0, 0)) <= time.max)
         {
-            eventResult = time;
-            Console.WriteLine("from DateChanged: time picked is between given range");
+            DisplayMessage("Time picked is between given range");
             return true;
         }
         else
         {
-            Console.WriteLine("from DateChanged: time picked is NOT between given range");
+            DisplayMessage("Time picked is NOT between given range", false);
         }
         return false;
     }
 
-    protected override async Task OnParametersSetAsync()
+    private async Task DisplayMessage(string _message, bool _positive = true)
     {
-        await GetClaimsPrincipalData();
-        await base.OnParametersSetAsync();
+        displayMessage = true;
+        positive = _positive;
+        message = _message;
+        await Task.Delay(10000);
+        displayMessage = false;
     }
+
     private async Task GetClaimsPrincipalData()
     {
         var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
@@ -94,38 +102,28 @@
 
     protected override async Task<Task> OnInitializedAsync()
     {
-        await OnParametersSetAsync();
-        newRes = new OfficePlanner.Shared.ViewModels.ReservationCreateViewModel()
+        await GetClaimsPrincipalData();
+        //settins = await SettingsService.GetActiveSetting(DateTime.Today);
+        settins = new SettingReadViewModel
         {
-            StartDate = choosenDay.Date + eventResult.pick,
-            EndDate = choosenDay.Date + eventResult.pick.Add(new TimeSpan(value, 0, 0)),
-            User = _userId,
-            Room = eventResult.roomId
+            Workhours = new OfficePlanner.Shared.Workhours
+            {
+                StartHour = "7:00:00",
+                EndHour = "16:00:00"
+            }
         };
-        Console.WriteLine("newRes: " + Newtonsoft.Json.JsonConvert.SerializeObject(newRes));
-
-        Console.WriteLine(_authMessage);
-        foreach (var item in _claims)
-        {
-            Console.WriteLine("claim: " + item);
-        }
-        Console.WriteLine(_userId);
         await GetAvailableSpace();
-
         return base.OnInitializedAsync();
     }
 
     async Task GetAvailableSpace()
     {
-        loading = true;
         var res = await ReservationsService.GetReservationByDate(choosenDay, choosenDay.AddDays(1));
-        roomList = await Http.GetFromJsonAsync<List<RoomsReadViewModel>>("api/Rooms");
+        roomList = await RoomService.GetAllRooms(DateTime.Now);
         times = new List<PickerTimeRange>();
 
-        // var settings = await Http.GetFromJsonAsync<SettingReadViewModel>("api/Settings/active?date=2021-11-11");
-
-        DateTime startHour = DateTime.Parse("2021 jan 01 07:00:00");
-        DateTime endHour = DateTime.Parse("2021 jan 01 17:00:00");
+        TimeSpan startHour = TimeSpan.Parse(settins.Workhours.StartHour);
+        TimeSpan endHour = TimeSpan.Parse(settins.Workhours.EndHour);
 
         foreach (var room in roomList)
         {
@@ -135,17 +133,15 @@
             {
                 if (room.Id == reservation.Room)
                 {
-                    var hoursBeforeAReservation = (reservation.StartDate.TimeOfDay - startHour.TimeOfDay).TotalHours;
-                    var hoursAfterAReservation = (endHour.TimeOfDay - reservation.EndDate.TimeOfDay).TotalHours;
-                    Console.WriteLine($"in foreach loop, delta hoursBeforeAReservation is: {hoursBeforeAReservation}");
-                    Console.WriteLine($"in foreach loop, delta hoursAfterAReservation is: {hoursAfterAReservation}");
+                    var hoursBeforeAReservation = (reservation.StartDate.TimeOfDay - startHour).TotalHours;
+                    var hoursAfterAReservation = (endHour - reservation.EndDate.TimeOfDay).TotalHours;
 
                     if (hoursBeforeAReservation >= value)
                     {
                         times.Add(new PickerTimeRange
                         {
                             roomId = reservation.Room,
-                            min = startHour.TimeOfDay,
+                            min = startHour,
                             max = reservation.StartDate.TimeOfDay
                         });
                     }
@@ -155,7 +151,7 @@
                         {
                             roomId = reservation.Room,
                             min = reservation.EndDate.TimeOfDay,
-                            max = endHour.TimeOfDay
+                            max = endHour
                         });
                     }
                 }
@@ -163,71 +159,57 @@
 
             for (int i = 0; i < deltaSeats; i++)
             {
-                Console.WriteLine($"in for loop, total free seats number: {i} of {deltaSeats}");
                 times.Add(new PickerTimeRange
                 {
                     roomId = room.Id,
-                    min = startHour.TimeOfDay,
-                    max = endHour.TimeOfDay
+                    min = startHour,
+                    max = endHour
                 });
             }
-            Console.WriteLine("newRes: " + Newtonsoft.Json.JsonConvert.SerializeObject(newRes));
         }
-
-
-        Console.WriteLine();
-        Console.WriteLine(Newtonsoft.Json.JsonConvert.SerializeObject(roomList));
-        Console.WriteLine("reservations:\n");
-        foreach (var item in res.Reservations)
-        {
-            Console.WriteLine(Newtonsoft.Json.JsonConvert.SerializeObject(item));
-        }
-        Console.WriteLine("times:\n");
-        foreach (var item in times)
-        {
-            Console.WriteLine(Newtonsoft.Json.JsonConvert.SerializeObject(item));
-        }
-        loading = false;
     }
     async Task OnChangeDate(DateTime? value, string name, string format)
     {
         await GetAvailableSpace();
-        Console.WriteLine($"{name} value changed to {value?.ToString(format)}");
     }
     async Task OnChangeRadio(int? value, string name)
     {
         await GetAvailableSpace();
-        Console.WriteLine($"{name} value changed to {value}");
     }
     async Task OnSubmit()
     {
-        newRes = new OfficePlanner.Shared.ViewModels.ReservationCreateViewModel()
+
+        if (TimeChanged(eventResult))
         {
-            StartDate = choosenDay.Date + eventResult.pick,
-            EndDate = choosenDay.Date + eventResult.pick.Add(new TimeSpan(value, 0, 0)),
-            User = _userId,
-            Room = eventResult.roomId
-        };
-        Console.WriteLine("from OnSubmit:  " + Newtonsoft.Json.JsonConvert.SerializeObject(newRes));
-        var validationResult = await ReservationsService.Validate(newRes);
-        if (validationResult)
-        {
-            Console.WriteLine("reservation is validated");
-            if (TimeChanged(eventResult))
+            newRes = new OfficePlanner.Shared.ViewModels.ReservationCreateViewModel()
             {
-                await ReservationsService.CreateReservation(newRes);
-                Console.WriteLine("reservation is submitted");
+                StartDate = choosenDay.Date + eventResult.pick,
+                EndDate = choosenDay.Date + eventResult.pick.Add(new TimeSpan(value, 0, 0)),
+                User = _userId,
+                Room = eventResult.roomId
+            };
+            var validationResult = await ReservationsService.Validate(newRes);
+            if (validationResult)
+            {
+                if (await ReservationsService.CreateReservation(newRes))
+                {
+                    DisplayMessage("reservation is submitted");
+                }
+                else
+                {
+                    DisplayMessage("reservation is unsuccessful", false);
+                }
+
+            }
+            else
+            {
+                DisplayMessage("reservation is unsuccessful", false);
             }
         }
         else
         {
-            Console.WriteLine("reservation is unsuccessful");
+            DisplayMessage("reservation is unsuccessful", false);
         }
 
     }
-    void OnChange(DateTime? value, string name, string format)
-    {
-        Console.WriteLine($"{name} value changed to {value}");
-    }
-
 }
