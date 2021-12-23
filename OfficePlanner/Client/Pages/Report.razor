@@ -5,6 +5,26 @@
 
 
 <h3>Report</h3>
+    <select @onchange="(args => GetWeeksInYear(args))">
+        @foreach (var year in years)
+        {
+            <option value=@year>@year</option>
+        }
+    </select>
+
+    @if (weekNumbers == null)
+    {
+
+    }
+    else
+    {
+        <select @onchange="(args => FirstDateOfWeekISO8601(selectedYear, args))">
+            @foreach (var weekNumber in weekNumbers)
+            {
+                <option value=@weekNumber>@weekNumber</option>
+            }
+        </select>
+    }
 
 @if (DataItems == null || activeSetting == null)
 {
@@ -39,46 +59,21 @@ else
     public DateTime startDate;
     public DateTime endDate;
 
+    public int[] years = { 2020, 2021, 2022, 2023, 2024, 2025, 2026, 2027, 2028, 2029, 2030 };
+    public int selectedYear;
+    public List<int> weekNumbers = new();
 
-    protected override async Task OnInitializedAsync()
+
+    protected override async Task<Task> OnInitializedAsync()
     {
-        startDate = DateTime.Now.AddDays(-1);
-        endDate = DateTime.Now.AddDays(7);
-        activeSetting = await SettingsService.GetActiveSetting(DateTime.Now);
-
-
-        RequiredReservationDays = activeSetting.DaysRequiredInOffice;
-
-        ReservationListView fetchedData = await ReservationsService.GetReservationByDate(startDate, endDate);
-        var uniqueUsers = fetchedData.Reservations.Select(x => x.UserName).Distinct().ToList();
-
-        foreach (var user in uniqueUsers)
-        {
-            int ReservationDays = 0;
-
-            var reservationsOfUser = fetchedData.Reservations.Where(x => x.UserName == user).ToList();
-
-            int totalHours = 0;
-            foreach (var reservation in reservationsOfUser)
-            {
-                var length = (reservation.EndDate - reservation.StartDate).TotalHours;
-                totalHours = totalHours + (int)length;
-            }
-            ReservationDays = totalHours / 8;
-            Console.WriteLine(ReservationDays);
-
-            DataItems.Add(new DataItem
-            {
-                Text = $"Username {user} has reserved {ReservationDays} out of {RequiredReservationDays} this week."
-            });
-
-        }
+        return base.OnInitializedAsync();
     }
 
 
     // https://stackoverflow.com/questions/662379/calculate-date-from-week-number
-    public static DateTime FirstDateOfWeekISO8601(int year, int weekOfYear)
+    public async void FirstDateOfWeekISO8601(int year, ChangeEventArgs changeEventArgs)
     {
+        var weekOfYear = Int32.Parse(changeEventArgs.Value.ToString());
         DateTime jan1 = new DateTime(year, 1, 1);
         int daysOffset = DayOfWeek.Thursday - jan1.DayOfWeek;
 
@@ -101,6 +96,58 @@ else
         var result = firstThursday.AddDays(weekNum * 7);
 
         // Subtract 3 days from Thursday to get Monday, which is the first weekday in ISO8601
-        return result.AddDays(-3);
+        var startDate = result.AddDays(-3);
+        var endDate = startDate.AddDays(6);
+
+        activeSetting = await SettingsService.GetActiveSetting(startDate);
+        DataItems = new List<DataItem>();
+
+        RequiredReservationDays = activeSetting.DaysRequiredInOffice;
+        Console.WriteLine("ACTIVE SETTING ON DATE: " + Newtonsoft.Json.JsonConvert.SerializeObject(activeSetting));
+
+        ReservationListView fetchedData = await ReservationsService.GetReservationByDate(startDate, endDate);
+
+        Console.WriteLine("RESERVATION LIST: " + Newtonsoft.Json.JsonConvert.SerializeObject(fetchedData));
+
+        var uniqueUsers = fetchedData.Reservations.Select(x => x.UserName).Distinct().ToList();
+        Console.WriteLine("USER LIST: " + Newtonsoft.Json.JsonConvert.SerializeObject(uniqueUsers));
+
+        foreach (var user in uniqueUsers)
+        {
+            int ReservationDays = 0;
+            var reservationsOfUser = fetchedData.Reservations.Where(x => x.UserName == user).ToList();
+
+            int totalHours = 0;
+            foreach (var reservation in reservationsOfUser)
+            {
+                var length = (reservation.EndDate - reservation.StartDate).TotalHours;
+                totalHours = totalHours + (int)length;
+            }
+            ReservationDays = totalHours / 8;
+
+            DataItems.Add(new DataItem
+            {
+                Text = $"Username {user} has reserved {ReservationDays} out of {RequiredReservationDays} this week."
+            });
+
+        }
+
+        ShouldRender();
+    }
+
+    public void GetWeeksInYear(ChangeEventArgs changeEventArgs)
+    {
+        var year = Int32.Parse(changeEventArgs.Value.ToString());
+        Console.WriteLine(year);
+        selectedYear = year;
+        DateTimeFormatInfo dfi = DateTimeFormatInfo.CurrentInfo;
+        DateTime date1 = new DateTime(year, 12, 31);
+        var cal = dfi.Calendar;
+        var weeks = cal.GetWeekOfYear(date1, dfi.CalendarWeekRule, dfi.FirstDayOfWeek);
+        Console.WriteLine(weeks);
+        for (int i = 1; i <= weeks; i++)
+        {
+            weekNumbers.Add(i);
+        }
     }
 }
