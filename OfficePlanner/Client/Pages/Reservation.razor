@@ -9,7 +9,7 @@
     <DataAnnotationsValidator />
     <div class="row">
         <div class="col-md-4">
-            <RadzenDatePicker @bind-Value=@choosenDay DateFormat="dd-MM-yyyy" />
+            <RadzenDatePicker @bind-Value=@choosenDay Change=@(args => OnChange(args, "DatePicker", "MM/dd/yyyy")) DateFormat="dd-MM-yyyy" />
             <RadzenRadioButtonList @bind-Value=@value TValue="int" Orientation="Radzen.Orientation.Horizontal" Change=@((args) => OnChangeRadio(args, "Select Hele dag/Halve Dag")) Style="margin-top:30px">
                 <Items>
                     <RadzenRadioButtonListItem Text="Full day" Value="8" />
@@ -23,7 +23,7 @@
                 </div>
             }
         </div>
-        <div class="col-md-7" id="accordionExample">
+        <div class="col-md-7" style="overflow-y: scroll; max-height: 800px; padding: 10px; border: 1px solid lightgray; border-radius:5px" id="accordionExample">
             @foreach (var room in roomList)
             {
                 <Room RoomTitle="@room.Name" Data="@times" RoomId="@room.Id" BindingValueChanged="value => TimeChanged(value)" SubmitBtnClick="x => OnSubmit()"></Room>
@@ -45,7 +45,7 @@
     List<PickerTimeRange> times = new List<PickerTimeRange>();
     ReservationCreateViewModel newRes = new ReservationCreateViewModel();
     IEnumerable<Claim> _claims = Enumerable.Empty<Claim>();
-    SettingReadViewModel settins { get; set; }
+    SettingReadViewModel settings { get; set; }
 
     DateTime choosenDay = DateTime.Today;
     DateTime date = DateTime.Today.AddDays(1);
@@ -69,7 +69,14 @@
         }
         else
         {
-            DisplayMessage("Time picked is NOT between given range", false);
+            if (time.pick < time.min)
+            {
+                DisplayMessage($"Your start time [{time.pick}] is before the given range [{time.min}]", false);
+            }
+            else if (time.pick.Add(new TimeSpan(value, 0, 0)) > time.max)
+            {
+                DisplayMessage($"Your end time [{time.pick.Add(new TimeSpan(value, 0, 0))}] is after the given range [{time.max}]", false);
+            }
         }
         return false;
     }
@@ -79,7 +86,7 @@
         displayMessage = true;
         positive = _positive;
         message = _message;
-        await Task.Delay(10000);
+        await Task.Delay(3000);
         displayMessage = false;
     }
 
@@ -98,20 +105,23 @@
         {
             _authMessage = "The user is NOT authenticated.";
         }
+        Console.WriteLine(_authMessage);
     }
+
+    //void DateRenderSpecial(DateRenderEventArgs args)
+    //{
+    //    if (settings.Holidays.Contains(args.Date))
+    //    {
+    //        args.Attributes.Add("style", "background-color: #ff6d41; border-color: white;");
+    //    }
+
+    //    args.Disabled = settings.Holidays.Contains(args.Date);
+    //}
 
     protected override async Task<Task> OnInitializedAsync()
     {
         await GetClaimsPrincipalData();
-        //settins = await SettingsService.GetActiveSetting(DateTime.Today);
-        settins = new SettingReadViewModel
-        {
-            Workhours = new OfficePlanner.Shared.Workhours
-            {
-                StartHour = "7:00:00",
-                EndHour = "16:00:00"
-            }
-        };
+        Console.WriteLine(Newtonsoft.Json.JsonConvert.SerializeObject(settings));
         await GetAvailableSpace();
         return base.OnInitializedAsync();
     }
@@ -119,11 +129,12 @@
     async Task GetAvailableSpace()
     {
         var res = await ReservationsService.GetReservationByDate(choosenDay, choosenDay.AddDays(1));
-        roomList = await RoomService.GetAllRooms(DateTime.Now);
+        roomList = await RoomService.GetAllRooms(choosenDay);
+        settings = await SettingsService.GetActiveSetting(choosenDay);
         times = new List<PickerTimeRange>();
 
-        TimeSpan startHour = TimeSpan.Parse(settins.Workhours.StartHour);
-        TimeSpan endHour = TimeSpan.Parse(settins.Workhours.EndHour);
+        TimeSpan startHour = TimeSpan.Parse(settings.Workhours.StartHour);
+        TimeSpan endHour = TimeSpan.Parse(settings.Workhours.EndHour);
 
         foreach (var room in roomList)
         {
@@ -168,7 +179,7 @@
             }
         }
     }
-    async Task OnChangeDate(DateTime? value, string name, string format)
+    async Task OnChange(DateTime? value, string name, string format)
     {
         await GetAvailableSpace();
     }
@@ -188,28 +199,33 @@
                 User = _userId,
                 Room = eventResult.roomId
             };
-            var validationResult = await ReservationsService.Validate(newRes);
-            if (validationResult)
-            {
-                if (await ReservationsService.CreateReservation(newRes))
-                {
-                    DisplayMessage("reservation is submitted");
-                }
-                else
-                {
-                    DisplayMessage("reservation is unsuccessful", false);
-                }
 
-            }
-            else
+            var dayOfWeek = newRes.StartDate.DayOfWeek;
+            if (!settings.WeekendsAllowed)
             {
-                DisplayMessage("reservation is unsuccessful", false);
+                if (dayOfWeek == DayOfWeek.Saturday || dayOfWeek == DayOfWeek.Sunday)
+                {
+                    DisplayMessage("It's weendend go home");
+                    return;
+                }
+            }
+
+            if(newRes.StartDate < DateTime.Now.AddDays(settings.DaysRequiredInOffice))
+            {
+                if (!settings.Holidays.Contains(newRes.StartDate.Date))
+                {
+                    var validationResult = await ReservationsService.Validate(newRes);
+                    if (validationResult)
+                    {
+                        if (await ReservationsService.CreateReservation(newRes))
+                        {
+                            DisplayMessage("Reservation is submitted.\nYou can view or delete your reservation on calendar page.");
+                            return;
+                        }
+                    }
+                }
             }
         }
-        else
-        {
-            DisplayMessage("reservation is unsuccessful", false);
-        }
-
+        DisplayMessage("Reservation is unsuccessful", false);
     }
 }

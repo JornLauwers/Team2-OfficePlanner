@@ -24,9 +24,9 @@ namespace OfficePlanner.Server.Controllers
             this.userManager = userManager;
         }
 
-       // [Authorize]
-        [HttpPut("GiveAdmin/{Id}")]
-        public async Task<IActionResult> AddRoleToUser(string id)
+        // [Authorize]
+        [HttpPut("GiveAdmin")]
+        public async Task<IActionResult> AddRoleToUser([FromQuery] string id)
         {
             try
             {
