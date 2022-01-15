@@ -2,12 +2,16 @@
 
 <h1>Office Planner</h1>
 
-Welkom bij de office planner applicatie.
+Welcome to our office planner application
 <br />
-Via deze applicatie kan u een afspraak maken om een bureau te reserveren voor een halve of hele dag.
+With this application you reserve your desk on your office for half or full day.
 <br />
-Klik op onderstaande knop om een bureau te reserveren.
-<br />
-<a href="https://localhost:44302/reservation">
-    <button type="button" class="btn btn-primary">Reserveren</button>
-</a>
+<AuthorizeView>
+    <Authorized>
+        Click the button below to reserve your desk.
+        <br />
+        <a href="https://localhost:44302/reservation">
+            <button type="button" class="btn btn-primary">Make a reservetion</button>
+        </a>
+    </Authorized>
+</AuthorizeView>

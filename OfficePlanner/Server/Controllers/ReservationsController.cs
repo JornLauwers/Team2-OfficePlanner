@@ -20,12 +20,14 @@ namespace OfficePlanner.Server.Controllers
     {
         private readonly IReservationsRepository reservationsRepository;
         private readonly IRoomsRepository roomsRepository;
+        private readonly ISettingsRepository settingsRepository;
         private IMapper _mapper { get; set; }
-        public ReservationsController( IReservationsRepository reservationsRepository, IMapper mapper, IRoomsRepository roomsRepository)
+        public ReservationsController(IReservationsRepository reservationsRepository, IMapper mapper, IRoomsRepository roomsRepository, ISettingsRepository settingsRepository)
         {
             this.reservationsRepository = reservationsRepository;
             this._mapper = mapper;
             this.roomsRepository = roomsRepository;
+            this.settingsRepository = settingsRepository;
         }
         public IActionResult Index()
         {
@@ -99,15 +101,35 @@ namespace OfficePlanner.Server.Controllers
 
         private bool ValidateReservation(ReservationCreateViewModel reservationCreateViewModel)
         {
+            var settings = settingsRepository.GetActiveProperties(DateTime.Now);
             RoomVersions<ApplicationUser> room = roomsRepository.GetRoomVersion(reservationCreateViewModel.Room, reservationCreateViewModel.StartDate);
             List<ReservationsDTO> reservations = reservationsRepository.GetByDate(reservationCreateViewModel.StartDate, reservationCreateViewModel.EndDate);
 
             IEnumerable<ReservationsDTO> reservationInGivenRoom = reservations.Where(x => x.Room == room.RoomId);
 
-            if (reservationInGivenRoom.Count() < room.AvailableSeats)
+            if (!settings.WeekendsAllowed)
             {
-                return true;
+                var dayOfWeek = reservationCreateViewModel.StartDate.DayOfWeek;
+                if (dayOfWeek == DayOfWeek.Saturday || dayOfWeek == DayOfWeek.Sunday)
+                {
+                    return false;
+                }
             }
+
+            if (reservationCreateViewModel.StartDate.TimeOfDay >= TimeSpan.Parse(settings.Workhours.StartHour) && reservationCreateViewModel.EndDate.TimeOfDay <= TimeSpan.Parse(settings.Workhours.EndHour))
+            {
+                if (reservationInGivenRoom.Count() < room.AvailableSeats)
+                {
+                    if (reservationCreateViewModel.StartDate < DateTime.Now.AddDays(settings.FutureReservationWindow))
+                    {
+                        if (!settings.Holidays.Contains(reservationCreateViewModel.StartDate.Date))
+                        {
+                            return true;
+                        }
+                    }
+                }
+            }
+  
             return false;
         }
     }
